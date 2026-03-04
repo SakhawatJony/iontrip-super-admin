@@ -8,6 +8,9 @@ import Footer from "./shared/Footer.jsx";
 import AdminLogin from "./admin/AdminLogin.jsx";
 import AdminLayout from "./admin/AdminLayout.jsx";
 import Dashboard from "./admin/Dashboard.jsx";
+import AllDeposit from "./admin/AllDeposit.jsx";
+import AllFlightBooking from "./admin/AllFlightBooking.jsx";
+import AllAgent from "./admin/AllAgent.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -21,6 +24,9 @@ export default function App() {
           <Route path="/" element={<AdminLogin />} />
           <Route path="/dashboard" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="alldeposit" element={<AllDeposit />} />
+            <Route path="flightbookings" element={<AllFlightBooking />} />
+            <Route path="customer/allagent" element={<AllAgent />} />
           </Route>
         </Routes>
       </Box>

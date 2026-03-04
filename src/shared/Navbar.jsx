@@ -23,7 +23,7 @@ export default function Navbar() {
           IonTrip
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {/* <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
          
           <Button
             variant="contained"
@@ -37,7 +37,7 @@ export default function Navbar() {
           >
             login or Sign up
           </Button>
-        </Box>
+        </Box> */}
       </Toolbar>
 </Box>
   );

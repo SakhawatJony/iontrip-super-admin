@@ -6,10 +6,10 @@ import AdminTopbar from "./AdminTopbar.jsx";
 
 export default function AdminLayout() {
   return (
-    <Box>
+    <Box sx={{ minHeight: "100vh" }}>
       <Box>
-        <Grid container>
-          <Grid item xs={12} md={2}>
+        <Grid container sx={{ minHeight: "100vh" }}>
+          <Grid item xs={12} md={2} sx={{ minHeight: "100vh" }}>
             <AdminSidebar />
           </Grid>
           <Grid item xs={12} md={10}>
