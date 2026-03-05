@@ -362,7 +362,13 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
 
   const handleBookingIdClick = (bookingId) => {
     if (bookingId && bookingId !== "-") {
-      handleOpenDetailsModal(bookings.find(b => (b.bookingId || b.id) === bookingId));
+      const adminEmail = user?.email || "";
+      navigate("/dashboard/bookingqueuedetails", {
+        state: {
+          bookingId,
+          email: adminEmail,
+        },
+      });
     }
   };
 

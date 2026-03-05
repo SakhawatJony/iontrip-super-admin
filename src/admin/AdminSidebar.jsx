@@ -195,6 +195,10 @@ const AdminSidebar = () => {
       setExpandedMenu("customer");
       return;
     }
+    if (location.pathname.startsWith("/dashboard/settings")) {
+      setExpandedMenu("settings");
+      return;
+    }
     if (location.pathname.startsWith("/dashboard/ledgerreport")) {
       setExpandedMenu("reports");
       return;
@@ -219,21 +223,34 @@ const AdminSidebar = () => {
   };
 
   const handleLogout = () => {
-    // Clear auth session
-    logout();
-    
-    // Show success toast
-    toast.success("Logged out successfully!", {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
-    
-    // Navigate to home page
-    navigate("/");
+    try {
+      // Clear auth session
+      logout();
+      
+      // Show success toast
+      toast.success("Logged out successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      
+      // Navigate to home page
+      navigate("/");
+    } catch (error) {
+      // Show error toast if logout fails
+      toast.error("Failed to logout. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      console.error("Logout error:", error);
+    }
   };
 
   return (
@@ -248,6 +265,25 @@ const AdminSidebar = () => {
         px: 2,
         position: "sticky",
         top: 0,
+        overflowY: "auto",
+        overflowX: "hidden",
+        "&::-webkit-scrollbar": {
+          width: "2px",
+          color:"var(--primary-color, #123D6E)",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "#f1f1f1",
+          color:"var(--primary-color, #123D6E)",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#888",
+          borderRadius: "4px",
+          color:"var(--primary-color, #123D6E)",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: "#555",
+          color:"var(--primary-color, #123D6E)",
+        },
       }}
     >
       <Box sx={{ px: 1, py: 3, textAlign: "center" }}>
@@ -326,8 +362,32 @@ const AdminSidebar = () => {
         </Collapse>
 
         {menuItem(<SettingsIcon sx={{ fontSize: 23 }} />, "Settings", {
-          path: "/dashboard/settings",
+          dropdown: true,
+          isOpen: expandedMenu === "settings",
+          onClick: () => handleToggle("settings"),
+          activePaths: ["/dashboard/settings"],
         }, location)}
+        <Collapse in={expandedMenu === "settings"} timeout="auto" unmountOnExit>
+          <Box
+            sx={{
+              position: "relative",
+              pl: 0,
+              pr: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 49,
+                top: 16,
+                bottom: 16,
+                width: 2,
+                bgcolor: SUBMENU_ICON_BORDER,
+              },
+            }}
+          >
+            <SubMenuItem text="All Admin" path="/dashboard/settings/alladmin" location={location} />
+            <SubMenuItem text="All Bank" path="/dashboard/settings/allbank" location={location} />
+          </Box>
+        </Collapse>
 
         {menuItem(<AccountBalanceWalletIcon sx={{ fontSize: 23 }} />, "Wallet", {
           dropdown: true,

@@ -57,12 +57,21 @@ export default function AdminLogin() {
         toast.success("Login successful!");
         
         // Save token and user data to AuthContext
-        const tokenData = data.token || data.accessToken || data.access_token;
+        const tokenData = data.access_token || data.token || data.accessToken;
+        const adminData = data.adminData || {};
+        
+        // Extract super admin email from adminData.email
+        const superAdminEmail = adminData.email || data.email || "";
+        
         const userData = {
-          adminId: data.adminId || adminId.trim(),
+          adminId: adminData.uuid || data.adminId || adminId.trim(),
+          email: superAdminEmail, // Super admin email from adminData.email
+          name: adminData.name || data.name || "",
+          role: adminData.role || data.role || "",
+          uuid: adminData.uuid || "",
+          adminData: adminData, // Keep full adminData object
           ...data.user,
           ...data.admin,
-          ...data,
         };
         
         // Remove sensitive fields from userData if needed

@@ -11,6 +11,11 @@ import Dashboard from "./admin/Dashboard.jsx";
 import AllDeposit from "./admin/AllDeposit.jsx";
 import AllFlightBooking from "./admin/AllFlightBooking.jsx";
 import AllAgent from "./admin/AllAgent.jsx";
+import AllAdmin from "./admin/AllAdmin.jsx";
+import AddAdmin from "./admin/AddAdmin.jsx";
+import AllBank from "./admin/AllBank.jsx";
+import LedgerReport from "./admin/LedgerReport.jsx";
+import BookingQueDetails from "./admin/booingInfo/BookingQueDetails.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -27,6 +32,11 @@ export default function App() {
             <Route path="alldeposit" element={<AllDeposit />} />
             <Route path="flightbookings" element={<AllFlightBooking />} />
             <Route path="customer/allagent" element={<AllAgent />} />
+            <Route path="settings/alladmin" element={<AllAdmin />} />
+            <Route path="settings/addadmin" element={<AddAdmin />} />
+            <Route path="settings/allbank" element={<AllBank />} />
+            <Route path="ledgerreport" element={<LedgerReport />} />
+            <Route path="bookingqueuedetails" element={<BookingQueDetails />} />
           </Route>
         </Routes>
       </Box>

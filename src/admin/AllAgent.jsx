@@ -109,10 +109,10 @@ const AllAgent = ({ title = "All Agent" }) => {
 
       if (response.status === 200 || response.status === 201) {
         toast.success(`Agent status updated to ${isActive ? "Active" : "Deactive"} successfully!`);
-        // Update the selected agent in state
-        setSelectedAgent({ ...selectedAgent, isActive: isActive });
         // Refresh the agents list
         fetchAgents();
+        // Close the modal
+        handleCloseDetailsModal();
       }
     } catch (err) {
       const apiMessage =
@@ -122,6 +122,61 @@ const AllAgent = ({ title = "All Agent" }) => {
         "Failed to update agent status.";
       toast.error(apiMessage);
       console.error("Update agent status failed:", err?.response?.data || err);
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
+
+  const handleVerifyAgent = async (isApproved) => {
+    if (!selectedAgent) return;
+
+    const authToken = token || localStorage.getItem("adminToken") || "";
+
+    if (!authToken) {
+      toast.error("Authentication token missing. Please login again.");
+      return;
+    }
+
+    if (!selectedAgent.email) {
+      toast.error("Agent email is missing.");
+      return;
+    }
+
+    setStatusUpdateLoading(true);
+
+    try {
+      // Encode the email for URL
+      const encodedEmail = encodeURIComponent(selectedAgent.email);
+      
+      const response = await axios.patch(
+        `${API_BASE_URL}${API_ENDPOINTS.VERIFY_AGENT}?email=${encodedEmail}`,
+        {
+          verify: true,
+          isActive: isApproved,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success(`Agent ${isApproved ? "approved" : "rejected"} successfully!`);
+        // Refresh the agents list
+        fetchAgents();
+        // Close the modal
+        handleCloseDetailsModal();
+      }
+    } catch (err) {
+      const apiMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        `Failed to ${isApproved ? "approve" : "reject"} agent.`;
+      toast.error(apiMessage);
+      console.error("Verify agent failed:", err?.response?.data || err);
     } finally {
       setStatusUpdateLoading(false);
     }
@@ -881,6 +936,86 @@ const AllAgent = ({ title = "All Agent" }) => {
                 </Box>
               </Box>
 
+              {/* Documents Section */}
+              {(selectedAgent.tinCopy || selectedAgent.nidCopy || selectedAgent.civilAviationCopy) && (
+                <Box sx={{ mt: 3, pt: 3, borderTop: "1px solid #E5E7EB" }}>
+                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#0F172A", mb: 2 }}>
+                    Documents
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
+                    {selectedAgent.tinCopy && (
+                      <Box>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 1 }}>TIN Copy</Typography>
+                        <Box
+                          component="img"
+                          src={selectedAgent.tinCopy}
+                          alt="TIN Copy"
+                          onClick={() => window.open(selectedAgent.tinCopy, "_blank")}
+                          sx={{
+                            width: "100%",
+                            maxHeight: 200,
+                            objectFit: "contain",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            "&:hover": {
+                              opacity: 0.8,
+                              borderColor: "#0F2F56",
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
+                    {selectedAgent.nidCopy && (
+                      <Box>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 1 }}>NID Copy</Typography>
+                        <Box
+                          component="img"
+                          src={selectedAgent.nidCopy}
+                          alt="NID Copy"
+                          onClick={() => window.open(selectedAgent.nidCopy, "_blank")}
+                          sx={{
+                            width: "100%",
+                            maxHeight: 200,
+                            objectFit: "contain",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            "&:hover": {
+                              opacity: 0.8,
+                              borderColor: "#0F2F56",
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
+                    {selectedAgent.civilAviationCopy && (
+                      <Box>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 1 }}>Civil Aviation Copy</Typography>
+                        <Box
+                          component="img"
+                          src={selectedAgent.civilAviationCopy}
+                          alt="Civil Aviation Copy"
+                          onClick={() => window.open(selectedAgent.civilAviationCopy, "_blank")}
+                          sx={{
+                            width: "100%",
+                            maxHeight: 200,
+                            objectFit: "contain",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: 1,
+                            cursor: "pointer",
+                            "&:hover": {
+                              opacity: 0.8,
+                              borderColor: "#0F2F56",
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
               {/* Action Buttons */}
               <Box
                 sx={{
@@ -891,46 +1026,95 @@ const AllAgent = ({ title = "All Agent" }) => {
                   borderTop: "1px solid #E5E7EB",
                 }}
               >
-                <Button
-                  variant="contained"
-                  onClick={() => handleUpdateAgentStatus(true)}
-                  disabled={statusUpdateLoading || selectedAgent?.isActive === true}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    backgroundColor: "#10B981",
-                    "&:hover": { backgroundColor: "#059669" },
-                    "&:disabled": {
-                      backgroundColor: "#D1D5DB",
-                      color: "#9CA3AF",
-                    },
-                  }}
-                >
-                  {statusUpdateLoading ? "Updating..." : "Active"}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => handleUpdateAgentStatus(false)}
-                  disabled={statusUpdateLoading || selectedAgent?.isActive === false}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    backgroundColor: "#EF4444",
-                    "&:hover": { backgroundColor: "#DC2626" },
-                    "&:disabled": {
-                      backgroundColor: "#D1D5DB",
-                      color: "#9CA3AF",
-                    },
-                  }}
-                >
-                  {statusUpdateLoading ? "Updating..." : "Deactive"}
-                </Button>
+                {selectedAgent?.isVerified === true ? (
+                  <>
+                    {/* Active/Deactive buttons for verified agents */}
+                    <Button
+                      variant="contained"
+                      onClick={() => handleUpdateAgentStatus(true)}
+                      disabled={statusUpdateLoading || selectedAgent?.isActive === true}
+                      sx={{
+                        textTransform: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        backgroundColor: "#10B981",
+                        "&:hover": { backgroundColor: "#059669" },
+                        "&:disabled": {
+                          backgroundColor: "#D1D5DB",
+                          color: "#9CA3AF",
+                        },
+                      }}
+                    >
+                      {statusUpdateLoading ? "Updating..." : "Active"}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleUpdateAgentStatus(false)}
+                      disabled={statusUpdateLoading || selectedAgent?.isActive === false}
+                      sx={{
+                        textTransform: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        backgroundColor: "#EF4444",
+                        "&:hover": { backgroundColor: "#DC2626" },
+                        "&:disabled": {
+                          backgroundColor: "#D1D5DB",
+                          color: "#9CA3AF",
+                        },
+                      }}
+                    >
+                      {statusUpdateLoading ? "Updating..." : "Deactive"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* Approved/Rejected buttons for unverified agents */}
+                    <Button
+                      variant="contained"
+                      onClick={() => handleVerifyAgent(true)}
+                      disabled={statusUpdateLoading}
+                      sx={{
+                        textTransform: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        backgroundColor: "#10B981",
+                        "&:hover": { backgroundColor: "#059669" },
+                        "&:disabled": {
+                          backgroundColor: "#D1D5DB",
+                          color: "#9CA3AF",
+                        },
+                      }}
+                    >
+                      {statusUpdateLoading ? "Processing..." : "Approved"}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleVerifyAgent(false)}
+                      disabled={statusUpdateLoading}
+                      sx={{
+                        textTransform: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1,
+                        backgroundColor: "#EF4444",
+                        "&:hover": { backgroundColor: "#DC2626" },
+                        "&:disabled": {
+                          backgroundColor: "#D1D5DB",
+                          color: "#9CA3AF",
+                        },
+                      }}
+                    >
+                      {statusUpdateLoading ? "Processing..." : "Rejected"}
+                    </Button>
+                  </>
+                )}
               </Box>
             </Box>
           )}
