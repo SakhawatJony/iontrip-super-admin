@@ -11,15 +11,16 @@ export default function AdminTopbar() {
   return (
     <Box
       sx={{
-       
-        px: { xs: 2, md: 5 },
-        py: 1,
+        px: { xs: 2, md: 3 },
+        py: 1.25,
         display: "flex",
         alignItems: "center",
         gap: 2,
+        bgcolor: "#FFFFFF",
+        borderBottom: "1px solid #E0E0E0",
       }}
     >
-      <Typography sx={{ fontWeight: 600, color: "#0d2a52",fontSize:20 }}>
+      <Typography sx={{ fontWeight: 700, color: "#333333", fontSize: 18 }}>
         IonTrip
       </Typography>
       <Box sx={{ flexGrow: 1 }} />

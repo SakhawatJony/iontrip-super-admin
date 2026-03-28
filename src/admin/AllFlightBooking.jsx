@@ -9,12 +9,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
-
-const headerTitleSx = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#0F172A",
-};
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 // Status mapping from API to display labels
 const statusLabelMap = {
@@ -57,11 +52,11 @@ const STATUS_OPTIONS = [
   { value: "issueinprocess", label: "Issue in Process" },
 ];
 
-const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Booking" }) => {
+const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Booking", defaultStatus = "" }) => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(defaultStatus);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [bookings, setBookings] = useState([]);
@@ -202,6 +197,15 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     }
   }, [status, page, limit, bookingIdFilter, pnrFilter, airlinesFilter, token]);
 
+  // Keep internal filter in sync with route-provided default.
+  useEffect(() => {
+    if (defaultStatus !== undefined && defaultStatus !== status) {
+      setStatus(defaultStatus);
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultStatus]);
+
   useEffect(() => {
     if (token) {
       fetchBookings();
@@ -219,6 +223,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
   }, [bookingIdFilter, pnrFilter, airlinesFilter, fetchBookings]);
 
   const selectedStatusLabel = STATUS_OPTIONS.find((opt) => opt.value === status)?.label || buttonLabel;
+  const headerText = defaultStatus ? title : "Booking History";
 
   const getStatusCards = () => {
     const statusOrder = ["ticketed", "reissue", "refund", "void", "hold", "issueinprocess", "booked"];
@@ -566,33 +571,61 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     <Box
       sx={{
         minHeight: "100vh",
-        px: { xs: 2, md: 1 },
+      
         py: 4,
       }}
     >
       <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            p: 1,
+            borderRadius: 1,
+            bgcolor: "var(--primary-dark, #024DAF)",
+          }}
+        >
+          <Typography sx={{ fontSize: 20, fontWeight: 500, color: "#FFFFFF" }}>
+            {headerText}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => fetchBookings()}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #0F2F56)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            startIcon={<RefreshIcon />}
+          >
+            Reload History
+          </Button>
+        </Box>
+
+      <Box
         sx={{
           backgroundColor: "#FFFFFF",
-          borderRadius: 2,
+          borderRadius: 1,
           border: "1px solid #E5E7EB",
-          px: { xs: 2, md: 3 },
-          py: { xs: 2.5, md: 3 },
+          px: { xs: 2, md: 1.5 },
+          py: { xs: 2.5, md: 2 },
           display: "flex",
           flexDirection: "column",
           gap: 2.5,
         }}
       >
+        
         <Box
           sx={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
             alignItems: "center",
-            justifyContent: "space-between",
             gap: 2,
-            flexWrap: "wrap",
           }}
         >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
             {getStatusCards().map((card) => (
               <Box
@@ -614,6 +647,18 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 </Typography>
               </Box>
             ))}
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 1,
+              flexWrap: { xs: "wrap", sm: "nowrap" },
+              flexShrink: 0,
+            }}
+          >
             <Button
               variant="contained"
               onClick={handleStatusClick}
@@ -638,40 +683,58 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 fontWeight: 600,
                 px: 2,
                 height: 36,
-                backgroundColor: "#0F2F56",
-                "&:hover": { backgroundColor: "#0B2442" },
+                backgroundColor: "var(--primary-dark, #024DAF)",
+                "&:hover": { backgroundColor: "rgba(2, 77, 175, 0.95)" },
               }}
             >
               {selectedStatusLabel}
             </Button>
-            <Menu
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleStatusClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
+
+            <Button
+              variant="contained"
+              startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+              onClick={handleToggleFilters}
+              sx={{
+                textTransform: "none",
+                fontSize: 11.5,
+                fontWeight: 600,
+                height: 32,
+                px: 1.5,
+                backgroundColor: "var(--primary-dark, #024DAF)",
+                "&:hover": { backgroundColor: "rgba(2, 77, 175, 0.95)" },
               }}
             >
-              {STATUS_OPTIONS.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  onClick={() => handleStatusSelect(option.value)}
-                  selected={status === option.value}
-                  sx={{
-                    fontSize: 12,
-                    fontWeight: status === option.value ? 600 : 400,
-                  }}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Menu>
+              {showFilters ? "Hide Filter" : "More Filter"}
+            </Button>
           </Box>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleStatusClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <MenuItem
+                key={option.value}
+                onClick={() => handleStatusSelect(option.value)}
+                selected={status === option.value}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: status === option.value ? 600 : 400,
+                }}
+              >
+                {option.label}
+              </MenuItem>
+            ))}
+          </Menu>
         </Box>
 
         <Box
@@ -801,23 +864,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
               )}
             </Box>
           )}
-          <Button
-            variant="contained"
-            startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
-            onClick={handleToggleFilters}
-            sx={{
-              textTransform: "none",
-              fontSize: 11.5,
-              fontWeight: 600,
-              height: 32,
-              px: 1.5,
-              backgroundColor: "#0F2F56",
-              "&:hover": { backgroundColor: "#0B2442" },
-              ml: "auto",
-            }}
-          >
-            {showFilters ? "Hide Filter" : "More Filter"}
-          </Button>
+          
         </Box>
 
         <Box
@@ -835,7 +882,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
-                backgroundColor: "#F8FAFC",
+                backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
               {tableColumns?.map((column) => (
@@ -846,11 +893,11 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                     alignItems: "center",
                     px: 2,
                     py: 1,
-                    borderBottom: "1px solid #E5E7EB",
-                    backgroundColor: "#F8FAFC",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.18)",
+                    backgroundColor: "transparent",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
                     {column.label}
                   </Typography>
                 </Box>
@@ -919,8 +966,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 justifyContent: "center",
                 fontSize: 11,
                 fontWeight: 600,
-                color: page > 1 ? "#1F2A44" : "#9CA3AF",
-                backgroundColor: page > 1 ? "#D1D5DB" : "#E5E7EB",
+                color: page > 1 ? "#FFFFFF" : "#9CA3AF",
+                backgroundColor: page > 1 ? "var(--primary-dark, #024DAF)" : "#E5E7EB",
                 cursor: page > 1 ? "pointer" : "not-allowed",
               }}
             >
@@ -954,7 +1001,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                     fontSize: 11,
                     fontWeight: 600,
                     color: isActive ? "#FFFFFF" : "#1F2A44",
-                    backgroundColor: isActive ? "#0F2F56" : "#EAF2FF",
+                    backgroundColor: isActive ? "var(--primary-dark, #024DAF)" : "rgba(2, 77, 175, 0.08)",
                     cursor: "pointer",
                   }}
                 >
@@ -974,8 +1021,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 justifyContent: "center",
                 fontSize: 11,
                 fontWeight: 600,
-                color: page < totalPages ? "#1F2A44" : "#9CA3AF",
-                backgroundColor: page < totalPages ? "#D1D5DB" : "#E5E7EB",
+                color: page < totalPages ? "#FFFFFF" : "#9CA3AF",
+                backgroundColor: page < totalPages ? "var(--primary-dark, #024DAF)" : "#E5E7EB",
                 cursor: page < totalPages ? "pointer" : "not-allowed",
               }}
             >

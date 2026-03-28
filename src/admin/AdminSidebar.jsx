@@ -15,7 +15,6 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 
 import HomeIcon from "@mui/icons-material/Home";
-import StorageIcon from "@mui/icons-material/Storage";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PersonIcon from "@mui/icons-material/Person";
@@ -23,6 +22,9 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CardTravelIcon from "@mui/icons-material/CardTravel";
+import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
+import HotelIcon from "@mui/icons-material/Hotel";
 
 const MENU_TEXT_COLOR = "#4B5563";
 const MENU_ICON_COLOR = "#6B7280";
@@ -94,10 +96,15 @@ const menuItem = (icon, text, options = {}, location = null) => {
       {dropdown && (
         <IconButton
           size="small"
-          onClick={onClick}
+            onClick={(e) => {
+              // Prevent double-toggle due to event bubbling:
+              // IconButton click bubbles to ListItemButton which also has onClick.
+              e.stopPropagation();
+              onClick?.();
+            }}
           sx={{
             ml: "auto",
-            width: 22,
+            width: 20,
             height: 22,
             bgcolor: DROPDOWN_ICON_BG,
             color: "#fff",
@@ -179,8 +186,12 @@ const AdminSidebar = () => {
   const [expandedMenu, setExpandedMenu] = useState(null);
 
   useEffect(() => {
-    if (location.pathname.startsWith("/dashboard/bookings")) {
+    if (location.pathname.startsWith("/dashboard/flightbookings")) {
       setExpandedMenu("bookings");
+      return;
+    }
+    if (location.pathname.startsWith("/dashboard/hotel")) {
+      setExpandedMenu("hotel");
       return;
     }
     if (location.pathname.startsWith("/dashboard/wallet")) {
@@ -188,6 +199,10 @@ const AdminSidebar = () => {
       return;
     }
     if (location.pathname.startsWith("/dashboard/alldeposit")) {
+      setExpandedMenu("wallet");
+      return;
+    }
+    if (location.pathname.startsWith("/dashboard/agentdeposit")) {
       setExpandedMenu("wallet");
       return;
     }
@@ -215,11 +230,38 @@ const AdminSidebar = () => {
       setExpandedMenu("account");
       return;
     }
+    if (location.pathname.startsWith("/dashboard/manage")) {
+      setExpandedMenu("manage");
+      return;
+    }
+    if (location.pathname.startsWith("/dashboard/visa")) {
+      setExpandedMenu("visa");
+      return;
+    }
+    if (location.pathname.startsWith("/dashboard/tour")) {
+      setExpandedMenu("tour");
+      return;
+    }
     setExpandedMenu(null);
   }, [location.pathname]);
 
   const handleToggle = (menuKey) => {
     setExpandedMenu((prev) => (prev === menuKey ? null : menuKey));
+  };
+
+  // When clicking a main dropdown item, go to its first sub-route
+  // so the first sub item becomes active by default.
+  const navigateAndOpen = (menuKey, firstPath) => {
+    setExpandedMenu(menuKey);
+    navigate(firstPath);
+  };
+
+  const toggleOrNavigate = (menuKey, firstPath) => {
+    if (expandedMenu === menuKey) {
+      setExpandedMenu(null);
+      return;
+    }
+    navigateAndOpen(menuKey, firstPath);
   };
 
   const handleLogout = () => {
@@ -269,20 +311,20 @@ const AdminSidebar = () => {
         overflowX: "hidden",
         "&::-webkit-scrollbar": {
           width: "2px",
-          color:"var(--primary-color, #123D6E)",
+          color: "var(--primary-dark, #024DAF)",
         },
         "&::-webkit-scrollbar-track": {
           background: "#f1f1f1",
-          color:"var(--primary-color, #123D6E)",
+          color: "var(--primary-dark, #024DAF)",
         },
         "&::-webkit-scrollbar-thumb": {
           background: "#888",
           borderRadius: "4px",
-          color:"var(--primary-color, #123D6E)",
+          color: "var(--primary-dark, #024DAF)",
         },
         "&::-webkit-scrollbar-thumb:hover": {
           background: "#555",
-          color:"var(--primary-color, #123D6E)",
+          color: "var(--primary-dark, #024DAF)",
         },
       }}
     >
@@ -306,11 +348,11 @@ const AdminSidebar = () => {
           end: true,
         }, location)}
 
-        {menuItem(<StorageIcon sx={{ fontSize: 23 }} />, "Bookings", {
+        {menuItem(<FlightTakeoffIcon sx={{ fontSize: 23 }} />, "Flight", {
           dropdown: true,
           isOpen: expandedMenu === "bookings",
-          onClick: () => handleToggle("bookings"),
-          activePaths: ["/dashboard/bookings"],
+          onClick: () => toggleOrNavigate("bookings", "/dashboard/flightbookings/bookinghistory"),
+          activePaths: ["/dashboard/flightbookings"],
         }, location)}
         <Collapse in={expandedMenu === "bookings"} timeout="auto" unmountOnExit>
           <Box
@@ -329,15 +371,127 @@ const AdminSidebar = () => {
               },
             }}
           >
-            <SubMenuItem text="All Flight Booking" path="/dashboard/flightbookings" location={location} />
+            <SubMenuItem text="Booking History" path="/dashboard/flightbookings/bookinghistory" location={location} />
+            <SubMenuItem text="Ticketed" path="/dashboard/flightbookings/ticketedhistory" location={location} />
+            <SubMenuItem text="Cancelled" path="/dashboard/flightbookings/cancelledhistory" location={location} />
+            <SubMenuItem text="Reissue" path="/dashboard/flightbookings/reissuehistory" location={location} />
+            <SubMenuItem text="Refunds" path="/dashboard/flightbookings/refundshistory" location={location} />
             
+          </Box>
+        </Collapse>
+
+        {menuItem(<HotelIcon sx={{ fontSize: 23 }} />, "Hotels", {
+          dropdown: true,
+          isOpen: expandedMenu === "hotel",
+          onClick: () => {
+            // Toggle dropdown on repeated clicks.
+            if (expandedMenu === "hotel") {
+              setExpandedMenu(null);
+              return;
+            }
+            navigateAndOpen("hotel", "/dashboard/hotel/bookinghistory");
+          },
+          activePaths: ["/dashboard/hotel"],
+        }, location)}
+        <Collapse
+          in={expandedMenu === "hotel"}
+          timeout="auto"
+          unmountOnExit
+        >
+          <Box
+            sx={{
+              position: "relative",
+              pl: 0,
+              pr: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 49,
+                top: 16,
+                bottom: 16,
+                width: 2,
+                bgcolor: SUBMENU_ICON_BORDER,
+              },
+            }}
+          >
+            <SubMenuItem text="Booking History" path="/dashboard/hotel/bookinghistory" location={location} />
+            <SubMenuItem
+              text="Confirm"
+              path="/dashboard/hotel/confirmhistory"
+              location={location}
+            />
+            <SubMenuItem
+              text="Refunds"
+              path="/dashboard/hotel/refundshistory"
+              location={location}
+            />
+            <SubMenuItem
+              text="Cancelled"
+              path="/dashboard/hotel/cancelledhistory"
+              location={location}
+            />
+          </Box>
+        </Collapse>
+        {menuItem(<CardTravelIcon sx={{ fontSize: 23 }} />, "Visa", {
+          dropdown: true,
+          isOpen: expandedMenu === "visa",
+          onClick: () => toggleOrNavigate("visa", "/dashboard/visa/allvisa"),
+          activePaths: ["/dashboard/visa"],
+        }, location)}
+        <Collapse in={expandedMenu === "visa"} timeout="auto" unmountOnExit>
+          <Box
+            sx={{
+              position: "relative",
+              pl: 0,
+              pr: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 49,
+                top: 16,
+                bottom: 16,
+                width: 2,
+                bgcolor: SUBMENU_ICON_BORDER,
+              },
+            }}
+          >
+            <SubMenuItem text="Visa History" path="/dashboard/visa/allvisa" location={location} />
+            <SubMenuItem text="Add Visa" path="/dashboard/visa/addvisa" location={location} />
+          </Box>
+        </Collapse>
+
+        {menuItem(<CardTravelIcon sx={{ fontSize: 23 }} />, "Tour", {
+          dropdown: true,
+          isOpen: expandedMenu === "tour",
+          onClick: () => toggleOrNavigate("tour", "/dashboard/tour/alltour"),
+          activePaths: ["/dashboard/tour"],
+        }, location)}
+        <Collapse in={expandedMenu === "tour"} timeout="auto" unmountOnExit>
+          <Box
+            sx={{
+              position: "relative",
+              pl: 0,
+              pr: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 49,
+                top: 16,
+                bottom: 16,
+                width: 2,
+                bgcolor: SUBMENU_ICON_BORDER,
+              },
+            }}
+          >
+            <SubMenuItem text="Tour History" path="/dashboard/tour/alltour" location={location} />
+            <SubMenuItem text="Add Tour" path="/dashboard/tour/addtour" location={location} />
           </Box>
         </Collapse>
 
         {menuItem(<PersonIcon sx={{ fontSize: 23 }} />, "Customer", {
           dropdown: true,
           isOpen: expandedMenu === "customer",
-          onClick: () => handleToggle("customer"),
+          onClick: () => toggleOrNavigate("customer", "/dashboard/customer/allagent"),
           activePaths: ["/dashboard/customer"],
         }, location)}
         <Collapse in={expandedMenu === "customer"} timeout="auto" unmountOnExit>
@@ -357,14 +511,14 @@ const AdminSidebar = () => {
               },
             }}
           >
-            <SubMenuItem text="All Agent" path="/dashboard/customer/allagent" location={location} />
+            <SubMenuItem text="Agent History" path="/dashboard/customer/allagent" location={location} />
           </Box>
         </Collapse>
 
         {menuItem(<SettingsIcon sx={{ fontSize: 23 }} />, "Settings", {
           dropdown: true,
           isOpen: expandedMenu === "settings",
-          onClick: () => handleToggle("settings"),
+          onClick: () => toggleOrNavigate("settings", "/dashboard/settings/alladmin"),
           activePaths: ["/dashboard/settings"],
         }, location)}
         <Collapse in={expandedMenu === "settings"} timeout="auto" unmountOnExit>
@@ -392,7 +546,7 @@ const AdminSidebar = () => {
         {menuItem(<AccountBalanceWalletIcon sx={{ fontSize: 23 }} />, "Wallet", {
           dropdown: true,
           isOpen: expandedMenu === "wallet",
-          onClick: () => handleToggle("wallet"),
+          onClick: () => toggleOrNavigate("wallet", "/dashboard/wallet"),
           activePaths: ["/dashboard/wallet", "/dashboard/agentdeposit", "/dashboard/alldeposit"],
         }, location)}
         <Collapse in={expandedMenu === "wallet"} timeout="auto" unmountOnExit>
@@ -420,7 +574,7 @@ const AdminSidebar = () => {
         {menuItem(<PersonIcon sx={{ fontSize: 23 }} />, "Account", {
           dropdown: true,
           isOpen: expandedMenu === "account",
-          onClick: () => handleToggle("account"),
+          onClick: () => toggleOrNavigate("account", "/dashboard/account"),
           activePaths: ["/dashboard/account"],
         }, location)}
         <Collapse in={expandedMenu === "account"} timeout="auto" unmountOnExit>
@@ -446,13 +600,38 @@ const AdminSidebar = () => {
         </Collapse>
 
         {menuItem(<AutorenewIcon sx={{ fontSize: 23 }} />, "Manage", {
-          path: "/dashboard/manage",
+          dropdown: true,
+          isOpen: expandedMenu === "manage",
+          onClick: () => toggleOrNavigate("manage", "/dashboard/manage/allblog"),
+          activePaths: ["/dashboard/manage"],
         }, location)}
+        <Collapse in={expandedMenu === "manage"} timeout="auto" unmountOnExit>
+          <Box
+            sx={{
+              position: "relative",
+              pl: 0,
+              pr: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 49,
+                top: 16,
+                bottom: 16,
+                width: 2,
+                bgcolor: SUBMENU_ICON_BORDER,
+              },
+            }}
+          >
+            <SubMenuItem text="All Blog" path="/dashboard/manage/allblog" location={location} />
+            <SubMenuItem text="Manage Website" path="/dashboard/manage/website" location={location} />
+          </Box>
+        </Collapse>
 
+       
         {menuItem(<BarChartIcon sx={{ fontSize: 23 }} />, "Ot Reports", {
           dropdown: true,
           isOpen: expandedMenu === "reports",
-          onClick: () => handleToggle("reports"),
+          onClick: () => toggleOrNavigate("reports", "/dashboard/ledgerreport"),
           activePaths: ["/dashboard/ledgerreport", "/dashboard/salesreport", "/dashboard/searchreport"],
         }, location)}
         <Collapse in={expandedMenu === "reports"} timeout="auto" unmountOnExit>

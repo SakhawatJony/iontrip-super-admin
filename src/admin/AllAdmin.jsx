@@ -1007,152 +1007,7 @@ const AllAdmin = ({ title = "All Admin" }) => {
           gap: 2.5,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenAddModal}
-              sx={{
-                textTransform: "none",
-                fontSize: 13,
-                fontWeight: 600,
-                px: 2.5,
-                py: 1,
-                height: 36,
-                backgroundColor: "#000000",
-                "&:hover": { backgroundColor: "#1a1a1a" },
-              }}
-            >
-              Add Admin
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleStatusClick}
-              endIcon={
-                <Box
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  }}
-                >
-                  <ExpandMoreIcon sx={{ fontSize: 18 }} />
-                </Box>
-              }
-              sx={{
-                textTransform: "none",
-                fontSize: 12,
-                fontWeight: 600,
-                px: 2,
-                height: 36,
-                backgroundColor: "#0F2F56",
-                "&:hover": { backgroundColor: "#0B2442" },
-              }}
-            >
-              {STATUS_OPTIONS.find((opt) => opt.value === status)?.label || "All Admins"}
-            </Button>
-            <Menu
-              anchorEl={statusAnchorEl}
-              open={statusMenuOpen}
-              onClose={handleStatusClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  onClick={() => handleStatusSelect(option.value)}
-                  selected={status === option.value}
-                  sx={{
-                    fontSize: 12,
-                    fontWeight: status === option.value ? 600 : 400,
-                  }}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Menu>
-
-            <Button
-              variant="contained"
-              onClick={handleRoleClick}
-              endIcon={
-                <Box
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  }}
-                >
-                  <ExpandMoreIcon sx={{ fontSize: 18 }} />
-                </Box>
-              }
-              sx={{
-                textTransform: "none",
-                fontSize: 12,
-                fontWeight: 600,
-                px: 2,
-                height: 36,
-                backgroundColor: "#0F2F56",
-                "&:hover": { backgroundColor: "#0B2442" },
-              }}
-            >
-              {ROLE_OPTIONS.find((opt) => opt.value === role)?.label || "All Roles"}
-            </Button>
-            <Menu
-              anchorEl={roleAnchorEl}
-              open={roleMenuOpen}
-              onClose={handleRoleClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-            >
-              {ROLE_OPTIONS.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  onClick={() => handleRoleSelect(option.value)}
-                  selected={role === option.value}
-                  sx={{
-                    fontSize: 12,
-                    fontWeight: role === option.value ? 600 : 400,
-                  }}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
-        </Box>
+        
 
         <Box
           sx={{
@@ -1291,8 +1146,8 @@ const AllAdmin = ({ title = "All Admin" }) => {
               fontWeight: 600,
               height: 32,
               px: 1.5,
-              backgroundColor: "#0F2F56",
-              "&:hover": { backgroundColor: "#0B2442" },
+              backgroundColor: "var(--primary-dark, #024DAF)",
+              "&:hover": { backgroundColor: "rgba(2, 77, 175, 0.95)" },
               ml: "auto",
             }}
           >
@@ -1306,8 +1161,10 @@ const AllAdmin = ({ title = "All Admin" }) => {
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
             overflowX: "auto",
-            overflowY: "auto",
+            maxHeight: { xs: "55vh", md: "65vh" },
+            overflowY: "scroll",
           }}
+          className="table-scrollbar-primary-dark"
         >
           <Box sx={{ minWidth: 1200 }}>
             <Box
@@ -1315,7 +1172,7 @@ const AllAdmin = ({ title = "All Admin" }) => {
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
-                backgroundColor: "#F8FAFC",
+                backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
               {tableColumns?.map((column) => (
@@ -1327,10 +1184,10 @@ const AllAdmin = ({ title = "All Admin" }) => {
                     px: 2,
                     py: 1,
                     borderBottom: "1px solid #E5E7EB",
-                    backgroundColor: "#F8FAFC",
+                    backgroundColor: "var(--primary-dark, #024DAF)",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
                     {column.label}
                   </Typography>
                 </Box>

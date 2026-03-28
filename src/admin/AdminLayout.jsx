@@ -12,13 +12,23 @@ export default function AdminLayout() {
           <Grid item xs={12} md={2} sx={{ minHeight: "100vh" }}>
             <AdminSidebar />
           </Grid>
-          <Grid item xs={12} md={10}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Grid
+            item
+            xs={12}
+            md={10}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+              bgcolor: "#F4F7F6",
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
               <AdminTopbar />
               <Box
                 sx={{
-                  borderRadius: 1,
-                  p: { xs: 2, md: 5 },
+                  flex: 1,
+                  p: { xs: 2, md: 3 },
                 }}
               >
                 <Outlet />

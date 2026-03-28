@@ -1,5 +1,13 @@
-// API Base URL Configuration
-export const API_BASE_URL = "https://iontrip-backend-production.up.railway.app";
+// API Base URL — set `VITE_API_BASE_URL` in `env/.env` (see vite.config.js `envDir`).
+const DEFAULT_API_BASE = "https://iontrip-backend-production-2d3b.up.railway.app";
+
+function normalizeApiBase(url) {
+  if (!url || typeof url !== "string") return "";
+  return url.trim().replace(/\/+$/, "");
+}
+
+export const API_BASE_URL =
+  normalizeApiBase(import.meta.env.VITE_API_BASE_URL) || DEFAULT_API_BASE;
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -19,4 +27,5 @@ export const API_ENDPOINTS = {
   UPDATE_BANK: "/bank-info",
   DELETE_BANK: "/bank-info",
   TRANSACTION_LIST: "/transection/admin/list",
+  VENDOR_TICKET: "/ticket-actions/VendorTicket",
 };

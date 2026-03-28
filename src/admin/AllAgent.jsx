@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Box, Button, Typography, CircularProgress, Modal, IconButton } from "@mui/material";
+import { Box, Button, Typography, CircularProgress, Modal, IconButton, TextField } from "@mui/material";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -30,7 +31,7 @@ const tableColumns = [
 
 const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
 
-const AllAgent = ({ title = "All Agent" }) => {
+const AllAgent = ({ title = "Agent History" }) => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   
@@ -44,10 +45,13 @@ const AllAgent = ({ title = "All Agent" }) => {
   const [agentIdFilter, setAgentIdFilter] = useState("");
   const [agentEmailFilter, setAgentEmailFilter] = useState("");
   const [agentNameFilter, setAgentNameFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  // Show filter inputs by default; "More Filter" button will then hide them.
+  const [showFilters, setShowFilters] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [markupInput, setMarkupInput] = useState("");
+  const [markupUpdateLoading, setMarkupUpdateLoading] = useState(false);
 
   const handleFilterChange = (filterType, value) => {
     if (filterType === "agentId") {
@@ -73,12 +77,67 @@ const AllAgent = ({ title = "All Agent" }) => {
 
   const handleOpenDetailsModal = (agent) => {
     setSelectedAgent(agent);
+    setMarkupInput(agent?.markup != null && agent?.markup !== "" ? String(agent.markup) : "");
     setModalOpen(true);
   };
 
   const handleCloseDetailsModal = () => {
     setModalOpen(false);
     setSelectedAgent(null);
+    setMarkupInput("");
+  };
+
+  const handleAddMarkup = async () => {
+    if (!selectedAgent) return;
+    const value = markupInput.trim();
+    if (value === "") {
+      toast.error("Please enter a markup value.");
+      return;
+    }
+    const num = parseFloat(value);
+    if (isNaN(num) || num < 0 || num > 100) {
+      toast.error("Please enter a valid markup percentage (0–100).");
+      return;
+    }
+    const authToken = token || localStorage.getItem("adminToken") || "";
+    if (!authToken) {
+      toast.error("Authentication token missing. Please login again.");
+      return;
+    }
+    if (!selectedAgent.email) {
+      toast.error("Agent email is missing.");
+      setMarkupUpdateLoading(false);
+      return;
+    }
+    setMarkupUpdateLoading(true);
+    try {
+      const encodedEmail = encodeURIComponent(selectedAgent.email);
+      const response = await axios.patch(
+        `${API_BASE_URL}${API_ENDPOINTS.VERIFY_AGENT}?email=${encodedEmail}`,
+        { markup: num, isVerified: selectedAgent.isVerified ?? false },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200 || response.status === 201) {
+        setSelectedAgent((prev) => (prev ? { ...prev, markup: num } : null));
+        setMarkupInput(String(num));
+        toast.success("Markup updated successfully!");
+        fetchAgents();
+      }
+    } catch (err) {
+      const apiMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (Array.isArray(err?.response?.data?.errors) ? err.response.data.errors[0] : null);
+      toast.error(apiMessage || "Failed to update markup.");
+      console.error("Update markup failed:", err?.response?.data || err);
+    } finally {
+      setMarkupUpdateLoading(false);
+    }
   };
 
   const handleUpdateAgentStatus = async (isActive) => {
@@ -145,15 +204,12 @@ const AllAgent = ({ title = "All Agent" }) => {
     setStatusUpdateLoading(true);
 
     try {
-      // Encode the email for URL
       const encodedEmail = encodeURIComponent(selectedAgent.email);
-      
+      const markup = selectedAgent.markup != null && selectedAgent.markup !== "" ? Number(selectedAgent.markup) : 0;
+
       const response = await axios.patch(
         `${API_BASE_URL}${API_ENDPOINTS.VERIFY_AGENT}?email=${encodedEmail}`,
-        {
-          verify: true,
-          isActive: isApproved,
-        },
+        { markup, isVerified: isApproved },
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -425,32 +481,52 @@ const AllAgent = ({ title = "All Agent" }) => {
       sx={{
         minHeight: "100vh",
         px: { xs: 2, md: 1 },
-        py: 4,
+        py: 2,
       }}
     >
+       <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+            p: 1,
+            borderRadius: 1,
+            bgcolor: "var(--primary-dark, #024DAF)",
+          }}
+        >
+          <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+          <Button
+            variant="contained"
+            onClick={() => fetchAgents()}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #024DAF)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+              height: 36,
+              px: 2,
+              borderRadius: 1,
+            }}
+            startIcon={<RefreshIcon />}
+          >
+            Reload
+          </Button>
+        </Box>
       <Box
         sx={{
           backgroundColor: "#FFFFFF",
-          borderRadius: 2,
+          borderRadius: 1,
           border: "1px solid #E5E7EB",
-          px: { xs: 2, md: 3 },
-          py: { xs: 2.5, md: 3 },
+          px: { xs: 2, md: 1.5 },
+          py: { xs: 2.5, md: 1 },
           display: "flex",
           flexDirection: "column",
           gap: 2.5,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-        </Box>
+       
 
         <Box
           sx={{
@@ -589,8 +665,8 @@ const AllAgent = ({ title = "All Agent" }) => {
               fontWeight: 600,
               height: 32,
               px: 1.5,
-              backgroundColor: "#0F2F56",
-              "&:hover": { backgroundColor: "#0B2442" },
+              backgroundColor: "var(--primary-dark, #024DAF)",
+              "&:hover": { backgroundColor: "rgba(2, 77, 175, 0.95)" },
               ml: "auto",
             }}
           >
@@ -605,6 +681,24 @@ const AllAgent = ({ title = "All Agent" }) => {
             backgroundColor: "#FFFFFF",
             overflowX: "auto",
             overflowY: "auto",
+            /* Table scrollbar styling to match primary dark theme */
+            "&::-webkit-scrollbar": {
+              width: "8px",
+              height: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "rgba(2, 77, 175, 0.18)",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "var(--primary-dark, #024DAF)",
+              borderRadius: "8px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: "var(--primary-dark, #024DAF) !important",
+              filter: "brightness(1.1)",
+            },
+            scrollbarWidth: "thin",
+            scrollbarColor: "var(--primary-dark, #024DAF) rgba(13, 48, 95, 0.18) !important",
           }}
         >
           <Box sx={{ minWidth: 1200 }}>
@@ -613,7 +707,7 @@ const AllAgent = ({ title = "All Agent" }) => {
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
-                backgroundColor: "#F8FAFC",
+                backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
               {tableColumns?.map((column) => (
@@ -625,10 +719,10 @@ const AllAgent = ({ title = "All Agent" }) => {
                     px: 2,
                     py: 1,
                     borderBottom: "1px solid #E5E7EB",
-                    backgroundColor: "#F8FAFC",
+                    backgroundColor: "var(--primary-dark, #024DAF)",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
                     {column.label}
                   </Typography>
                 </Box>
@@ -901,9 +995,30 @@ const AllAgent = ({ title = "All Agent" }) => {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Markup</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedAgent.markup || "-"}%
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                      <TextField
+                        size="small"
+                        placeholder="e.g. 10"
+                        value={markupInput}
+                        onChange={(e) => setMarkupInput(e.target.value)}
+                        inputProps={{ min: 0, max: 100, step: 0.01 }}
+                        type="number"
+                        sx={{
+                          width: 100,
+                          "& .MuiInputBase-input": { fontSize: 14 },
+                        }}
+                      />
+                      <Typography sx={{ fontSize: 14, color: "#6B7280" }}>%</Typography>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={handleAddMarkup}
+                        disabled={markupUpdateLoading}
+                        sx={{ textTransform: "none", fontWeight: 600 }}
+                      >
+                        {markupUpdateLoading ? "..." : "Add"}
+                      </Button>
+                    </Box>
                   </Box>
                   {selectedAgent.createdAt && (
                     <Box>

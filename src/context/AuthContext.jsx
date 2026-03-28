@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../config/api.js";
 
 const AuthContext = createContext(null);
 
@@ -68,6 +69,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
+    BASE_API_URL: API_BASE_URL,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
