@@ -24,25 +24,41 @@ const BookingQueInvoice = () => {
   const [eTicketWithCAABDialogOpen, setETicketWithCAABDialogOpen] = useState(false);
   const [agentInvoiceDialogOpen, setAgentInvoiceDialogOpen] = useState(false);
   const [agentInvoiceWithCAABDialogOpen, setAgentInvoiceWithCAABDialogOpen] = useState(false);
+  const [bookingInvoiceDialogOpen, setBookingInvoiceDialogOpen] = useState(false);
+  const [bookingInvoiceWithCAABDialogOpen, setBookingInvoiceWithCAABDialogOpen] = useState(false);
   const [eTicketDownloadWithPrice, setETicketDownloadWithPrice] = useState(true);
+  /** Filename / flow: eticket | booking | agent — capture always uses ETicketPdfLayout */
+  const [pdfCaptureVariant, setPdfCaptureVariant] = useState("eticket");
+  /** Agency + CAAB from ETicketWithCAABDialog / booking invoice CAAB dialog */
+  const [caabPdfPayload, setCaabPdfPayload] = useState(null);
   const [triggerPdfDownload, setTriggerPdfDownload] = useState(false);
   const pdfSourceRef = useRef(null);
 
+  const isBookingOrCustomerInvoice =
+    invoiceType === "Booking Invoice" || invoiceType === "Customer Invoice";
+  const downloadDialogTitle =
+    invoiceType === "Customer Invoice" ? "Customer Invoice Download" : "Booking Invoice Download";
+
   useEffect(() => {
     if (!triggerPdfDownload || !pdfSourceRef.current || !bookingData) return;
-    const filename = `e-ticket-${bookingData?.bookingId || "ticket"}-${eTicketDownloadWithPrice ? "with-price" : "without-price"}`;
+    const id = bookingData?.bookingId || "ticket";
+    const suffix = eTicketDownloadWithPrice ? "with-price" : "without-price";
+    let filename;
+    if (pdfCaptureVariant === "booking") {
+      filename = `${invoiceType === "Customer Invoice" ? "customer-invoice" : "booking-invoice"}-${id}-${suffix}`;
+    } else if (pdfCaptureVariant === "agent") {
+      filename = `agent-invoice-${id}-${suffix}`;
+    } else {
+      filename = `e-ticket-${id}-${suffix}`;
+    }
     const el = pdfSourceRef.current;
-    // Wait for React to commit and DOM to paint with correct showFareSummary, then capture
     const timer = setTimeout(() => {
       downloadElementAsPdf(el, filename)
         .then(() => setTriggerPdfDownload(false))
-        .catch((err) => {
-          console.error("E-Ticket PDF download failed:", err);
-          setTriggerPdfDownload(false);
-        });
+        .catch(() => setTriggerPdfDownload(false));
     }, 250);
     return () => clearTimeout(timer);
-  }, [triggerPdfDownload, eTicketDownloadWithPrice, bookingData]);
+  }, [triggerPdfDownload, eTicketDownloadWithPrice, bookingData, pdfCaptureVariant, invoiceType]);
 
   if (!bookingData) {
     return (
@@ -57,31 +73,6 @@ const BookingQueInvoice = () => {
 
   return (
     <Box sx={{ minHeight: "100vh", width: "100%" }}>
-      {/* Full-width back row, no heading, no bg */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          width: "100%",
-          bgcolor: "var(--primary-color)",
-          py: 1,
-          mt:5,
-          color: "white",
-        }}
-      >
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(-1)}
-          sx={{
-            textTransform: "capitalize",
-            color: "white",
-            minWidth: 0,
-            "& .MuiButton-startIcon": { color: "white" },
-          }}
-        >
-          Invoice Download
-        </Button>
-      </Box>
       <Box sx={{ px: 4, py: 4, width: "100%" }}>
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3, justifyContent: "flex-end" }}>
           {invoiceType === "Agent Invoice" && (
@@ -112,10 +103,11 @@ const BookingQueInvoice = () => {
               </Button>
             </>
           )}
-          {invoiceType === "Customer Invoice" && (
+          {isBookingOrCustomerInvoice && (
             <>
               <Button
                 startIcon={<FileDownloadIcon />}
+                onClick={() => setBookingInvoiceWithCAABDialogOpen(true)}
                 sx={{
                   bgcolor: "var(--primary-color)",
                   color: "white",
@@ -123,10 +115,11 @@ const BookingQueInvoice = () => {
                   "&:hover": { bgcolor: "var(--primary-color)", opacity: 0.9 },
                 }}
               >
-                Customer Invoice With CAAB
+                {invoiceType === "Customer Invoice" ? "Customer Invoice With CAAB" : "Booking Invoice With CAAB"}
               </Button>
               <Button
                 startIcon={<FileDownloadIcon />}
+                onClick={() => setBookingInvoiceDialogOpen(true)}
                 sx={{
                   bgcolor: "var(--primary-color)",
                   color: "white",
@@ -134,7 +127,7 @@ const BookingQueInvoice = () => {
                   "&:hover": { bgcolor: "var(--primary-color)", opacity: 0.9 },
                 }}
               >
-                Customer Invoice
+                {invoiceType === "Customer Invoice" ? "Customer Invoice" : "Booking Invoice"}
               </Button>
               <Button
                 startIcon={<EditIcon />}
@@ -150,7 +143,9 @@ const BookingQueInvoice = () => {
               </Button>
             </>
           )}
-          {invoiceType !== "Agent Invoice" && invoiceType !== "Customer Invoice" && (
+          {invoiceType !== "Agent Invoice" &&
+            invoiceType !== "Customer Invoice" &&
+            invoiceType !== "Booking Invoice" && (
             <>
               <Button
                 startIcon={<FileDownloadIcon />}
@@ -205,11 +200,15 @@ const BookingQueInvoice = () => {
           onClose={() => setETicketDialogOpen(false)}
           onDownloadWithPrice={() => {
             setETicketDialogOpen(false);
+            setPdfCaptureVariant("eticket");
+            setCaabPdfPayload(null);
             setETicketDownloadWithPrice(true);
             setTriggerPdfDownload(true);
           }}
           onDownloadWithoutPrice={() => {
             setETicketDialogOpen(false);
+            setPdfCaptureVariant("eticket");
+            setCaabPdfPayload(null);
             setETicketDownloadWithPrice(false);
             setTriggerPdfDownload(true);
           }}
@@ -219,11 +218,53 @@ const BookingQueInvoice = () => {
           onClose={() => setETicketWithCAABDialogOpen(false)}
           onDownloadWithPrice={(payload) => {
             setETicketWithCAABDialogOpen(false);
+            setPdfCaptureVariant("eticket");
+            setCaabPdfPayload(payload);
             setETicketDownloadWithPrice(true);
             setTriggerPdfDownload(true);
           }}
           onDownloadWithoutPrice={(payload) => {
             setETicketWithCAABDialogOpen(false);
+            setPdfCaptureVariant("eticket");
+            setCaabPdfPayload(payload);
+            setETicketDownloadWithPrice(false);
+            setTriggerPdfDownload(true);
+          }}
+        />
+        <ETicketDownloadDialog
+          open={bookingInvoiceDialogOpen}
+          onClose={() => setBookingInvoiceDialogOpen(false)}
+          title={downloadDialogTitle}
+          onDownloadWithPrice={() => {
+            setBookingInvoiceDialogOpen(false);
+            setPdfCaptureVariant("booking");
+            setCaabPdfPayload(null);
+            setETicketDownloadWithPrice(true);
+            setTriggerPdfDownload(true);
+          }}
+          onDownloadWithoutPrice={() => {
+            setBookingInvoiceDialogOpen(false);
+            setPdfCaptureVariant("booking");
+            setCaabPdfPayload(null);
+            setETicketDownloadWithPrice(false);
+            setTriggerPdfDownload(true);
+          }}
+        />
+        <ETicketWithCAABDialog
+          open={bookingInvoiceWithCAABDialogOpen}
+          onClose={() => setBookingInvoiceWithCAABDialogOpen(false)}
+          title={downloadDialogTitle}
+          onDownloadWithPrice={(payload) => {
+            setBookingInvoiceWithCAABDialogOpen(false);
+            setPdfCaptureVariant("booking");
+            setCaabPdfPayload(payload);
+            setETicketDownloadWithPrice(true);
+            setTriggerPdfDownload(true);
+          }}
+          onDownloadWithoutPrice={(payload) => {
+            setBookingInvoiceWithCAABDialogOpen(false);
+            setPdfCaptureVariant("booking");
+            setCaabPdfPayload(payload);
             setETicketDownloadWithPrice(false);
             setTriggerPdfDownload(true);
           }}
@@ -232,23 +273,39 @@ const BookingQueInvoice = () => {
           open={agentInvoiceDialogOpen}
           onClose={() => setAgentInvoiceDialogOpen(false)}
           onDownloadWithPrice={() => {
-            // TODO: trigger Agent Invoice download with price
+            setAgentInvoiceDialogOpen(false);
+            setPdfCaptureVariant("agent");
+            setCaabPdfPayload(null);
+            setETicketDownloadWithPrice(true);
+            setTriggerPdfDownload(true);
           }}
           onDownloadWithoutPrice={() => {
-            // TODO: trigger Agent Invoice download without price
+            setAgentInvoiceDialogOpen(false);
+            setPdfCaptureVariant("agent");
+            setCaabPdfPayload(null);
+            setETicketDownloadWithPrice(false);
+            setTriggerPdfDownload(true);
           }}
         />
         <AgentInvoiceWithCAABDialog
           open={agentInvoiceWithCAABDialogOpen}
           onClose={() => setAgentInvoiceWithCAABDialogOpen(false)}
           onDownloadWithPrice={(payload) => {
-            // TODO: trigger Agent Invoice with CAAB download with price (payload: { agencyName, civilAviationNumber })
+            setAgentInvoiceWithCAABDialogOpen(false);
+            setPdfCaptureVariant("agent");
+            setCaabPdfPayload(payload);
+            setETicketDownloadWithPrice(true);
+            setTriggerPdfDownload(true);
           }}
           onDownloadWithoutPrice={(payload) => {
-            // TODO: trigger Agent Invoice with CAAB download without price
+            setAgentInvoiceWithCAABDialogOpen(false);
+            setPdfCaptureVariant("agent");
+            setCaabPdfPayload(payload);
+            setETicketDownloadWithPrice(false);
+            setTriggerPdfDownload(true);
           }}
         />
-        {/* Hidden div for PDF capture - off-screen but painted so html2canvas can capture */}
+        {/* Hidden node for html2canvas — ETicketPdfLayout for all PDF downloads */}
         <Box
           ref={pdfSourceRef}
           sx={{
@@ -263,18 +320,17 @@ const BookingQueInvoice = () => {
             visibility: "visible",
           }}
         >
-          <ETicketPdfLayout data={bookingData} showFareSummary={eTicketDownloadWithPrice} />
+          <ETicketPdfLayout
+            data={bookingData}
+            showFareSummary={eTicketDownloadWithPrice}
+            agencyName={caabPdfPayload?.agencyName}
+            binNumber={caabPdfPayload?.civilAviationNumber}
+          />
         </Box>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <BookingQueDetailsCard data={bookingData} />
           <BookingQuePassengerList data={bookingData} />
           <BookingQueCustomerFareSummary data={bookingData} />
-          <Box sx={{ mt: 3, p: 2, bgcolor: "#F9FAFB", borderRadius: 1, border: "1px solid #E5E7EB" }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#374151", mb: 2 }}>
-              E-Ticket / Itinerary (PDF layout)
-            </Typography>
-            <ETicketPdfLayout data={bookingData} />
-          </Box>
         </Box>
       </Box>
     </Box>

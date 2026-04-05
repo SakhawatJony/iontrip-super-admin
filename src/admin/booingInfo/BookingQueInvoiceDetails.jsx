@@ -37,7 +37,13 @@ const formatNumber = (num) => {
   return parts.length > 1 ? `${parts[0]}.${parts[1]}` : `${parts[0]}.00`;
 };
 
-const BookingQueInvoiceDetails = ({ data, invoiceType = "Booking Invoice" }) => {
+const BookingQueInvoiceDetails = ({
+  data,
+  invoiceType = "Booking Invoice",
+  showFareSummary = true,
+  agencyName,
+  civilAviationNumber,
+}) => {
   if (!data) return null;
 
   const travellers = data?.travellers || [];
@@ -68,6 +74,19 @@ const BookingQueInvoiceDetails = ({ data, invoiceType = "Booking Invoice" }) => 
       <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1F2937", mb: 2 }}>
         {invoiceType}
       </Typography>
+
+      {(agencyName || civilAviationNumber) && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: "#F9FAFB", borderRadius: 1, border: "1px solid #E5E7EB" }}>
+          {agencyName && (
+            <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>{agencyName}</Typography>
+          )}
+          {civilAviationNumber && (
+            <Typography sx={{ fontSize: 11, color: "#6B7280", mt: agencyName ? 0.5 : 0 }}>
+              CAAB No: {civilAviationNumber}
+            </Typography>
+          )}
+        </Box>
+      )}
 
       {/* Booking info */}
       <Box sx={{ mb: 2, p: 1.5, bgcolor: "#F3F4F6", borderRadius: 1 }}>
@@ -138,29 +157,34 @@ const BookingQueInvoiceDetails = ({ data, invoiceType = "Booking Invoice" }) => 
         </Table>
       </Box>
 
-      {/* Fare summary */}
-      <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#374151", mb: 1 }}>
-        Fare Summary
-      </Typography>
-      <Box sx={{ border: "1px solid #E5E7EB", borderRadius: 1, p: 1.5, mb: 1 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
-          <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Total Base Fare</Typography>
-          <Typography sx={{ fontSize: 11, fontWeight: 600 }}>{formatNumber(totalBaseFare)} {currency}</Typography>
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
-          <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Total Tax & Fee</Typography>
-          <Typography sx={{ fontSize: 11, fontWeight: 600 }}>{formatNumber(totalTax)} {currency}</Typography>
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
-          <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Discount</Typography>
-          <Typography sx={{ fontSize: 11, fontWeight: 600 }}>-{formatNumber(totalDiscount)} {currency}</Typography>
-        </Box>
-        <Divider sx={{ my: 0.5 }} />
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#111827" }}>Grand Total</Typography>
-          <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--primary-color)" }}>{formatNumber(grandTotal)} {currency}</Typography>
-        </Box>
-      </Box>
+      {showFareSummary && (
+        <>
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#374151", mb: 1 }}>
+            Fare Summary
+          </Typography>
+          <Box sx={{ border: "1px solid #E5E7EB", borderRadius: 1, p: 1.5, mb: 1 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
+              <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Total Base Fare</Typography>
+              <Typography sx={{ fontSize: 11, fontWeight: 600 }}>{formatNumber(totalBaseFare)} {currency}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
+              <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Total Tax & Fee</Typography>
+              <Typography sx={{ fontSize: 11, fontWeight: 600 }}>{formatNumber(totalTax)} {currency}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 11, py: 0.25 }}>
+              <Typography sx={{ fontSize: 11, color: "#6B7280" }}>Discount</Typography>
+              <Typography sx={{ fontSize: 11, fontWeight: 600 }}>-{formatNumber(totalDiscount)} {currency}</Typography>
+            </Box>
+            <Divider sx={{ my: 0.5 }} />
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#111827" }}>Grand Total</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--primary-color)" }}>
+                {formatNumber(grandTotal)} {currency}
+              </Typography>
+            </Box>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };

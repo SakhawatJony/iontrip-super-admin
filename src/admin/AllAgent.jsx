@@ -9,6 +9,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 const headerTitleSx = {
   fontSize: 22,
@@ -29,7 +30,7 @@ const tableColumns = [
   { key: "action", label: "Action", width: "120px" },
 ];
 
-const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
 
 const AllAgent = ({ title = "Agent History" }) => {
   const navigate = useNavigate();
@@ -497,21 +498,23 @@ const AllAgent = ({ title = "Agent History" }) => {
         >
           <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={() => fetchAgents()}
             sx={{
               textTransform: "none",
+              fontSize: 14,
               fontWeight: 700,
               bgcolor: "#FFFFFF",
               color: "var(--primary-dark, #024DAF)",
-              "&:hover": { bgcolor: "#EAEFF5" },
+              borderColor: "rgba(2, 77, 175, 0.35)",
+              "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
               height: 36,
               px: 2,
               borderRadius: 1,
             }}
             startIcon={<RefreshIcon />}
           >
-            Reload
+            Reload History
           </Button>
         </Box>
       <Box
@@ -679,12 +682,11 @@ const AllAgent = ({ title = "Agent History" }) => {
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
+            overflowX: "hidden",
             overflowY: "auto",
-            /* Table scrollbar styling to match primary dark theme */
+            width: "100%",
             "&::-webkit-scrollbar": {
               width: "8px",
-              height: "8px",
             },
             "&::-webkit-scrollbar-track": {
               background: "rgba(2, 77, 175, 0.18)",
@@ -701,12 +703,13 @@ const AllAgent = ({ title = "Agent History" }) => {
             scrollbarColor: "var(--primary-dark, #024DAF) rgba(13, 48, 95, 0.18) !important",
           }}
         >
-          <Box sx={{ minWidth: 1200 }}>
+          <Box sx={{ width: "100%", minWidth: 0 }}>
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
+                width: "100%",
                 backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
@@ -720,9 +723,21 @@ const AllAgent = ({ title = "Agent History" }) => {
                     py: 1,
                     borderBottom: "1px solid #E5E7EB",
                     backgroundColor: "var(--primary-dark, #024DAF)",
+                    minWidth: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      width: "100%",
+                    }}
+                  >
                     {column.label}
                   </Typography>
                 </Box>
@@ -750,6 +765,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                       display: "grid",
                       gridTemplateColumns: tableGridTemplate,
                       alignItems: "stretch",
+                      width: "100%",
                     }}
                   >
                     {tableColumns.map((column) => {
@@ -763,6 +779,8 @@ const AllAgent = ({ title = "Agent History" }) => {
                             px: 2,
                             py: 1.4,
                             borderBottom: "1px solid #E5E7EB",
+                            minWidth: 0,
+                            overflow: "hidden",
                           }}
                         >
                           {renderCell(column.key, value, agent)}

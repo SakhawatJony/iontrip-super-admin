@@ -9,6 +9,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 const headerTitleSx = {
   fontSize: 22,
@@ -40,7 +41,7 @@ const tableColumns = [
   { key: "action", label: "Action", width: "180px" },
 ];
 
-const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Deposits" },
@@ -50,7 +51,7 @@ const STATUS_OPTIONS = [
  
 ];
 
-const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
+const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   
@@ -68,7 +69,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
   const [depositIdFilter, setDepositIdFilter] = useState("");
   const [agentEmailFilter, setAgentEmailFilter] = useState("");
   const [transactionIdFilter, setTransactionIdFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -113,7 +114,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
   };
 
   const handleToggleFilters = () => {
-    setShowFilters(!showFilters);
+    setShowFilters((prev) => !prev);
   };
 
   const handleOpenModal = (imageUrl) => {
@@ -570,6 +571,39 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
     >
       <Box
         sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+          onClick={handleToggleFilters}
+          sx={{
+            textTransform: "none",
+            fontSize: 12,
+            fontWeight: 700,
+            bgcolor: "#FFFFFF",
+            color: "var(--primary-dark, #024DAF)",
+            borderColor: "rgba(2, 77, 175, 0.35)",
+            "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
+            height: 34,
+            px: 1.8,
+            borderRadius: 1,
+          }}
+        >
+          {showFilters ? "Hide Filter" : "More Filter"}
+        </Button>
+      </Box>
+
+      <Box
+        sx={{
           backgroundColor: "#FFFFFF",
           borderRadius: 2,
           border: "1px solid #E5E7EB",
@@ -589,8 +623,6 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
             flexWrap: "wrap",
           }}
         >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
             {getStatusCards().map((card) => (
               <Box
@@ -698,6 +730,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -726,6 +759,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -754,6 +788,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -799,23 +834,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
               )}
             </Box>
           )}
-          <Button
-            variant="contained"
-            startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
-            onClick={handleToggleFilters}
-            sx={{
-              textTransform: "none",
-              fontSize: 11.5,
-              fontWeight: 600,
-              height: 32,
-              px: 1.5,
-              backgroundColor: "#0F2F56",
-              "&:hover": { backgroundColor: "#0B2442" },
-              ml: "auto",
-            }}
-          >
-            {showFilters ? "Hide Filter" : "More Filter"}
-          </Button>
+       
         </Box>
 
         <Box
@@ -823,17 +842,18 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
-            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
           }}
         >
-          <Box sx={{ minWidth: 1200 }}>
+          <Box sx={{ width: "100%", minWidth: 0 }}>
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
-                backgroundColor: "#F8FAFC",
+                width: "100%",
+                backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
               {tableColumns?.map((column, columnIndex) => (
@@ -845,10 +865,22 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                     px: 2,
                     py: 1,
                     borderBottom: "1px solid #E5E7EB",
-                    backgroundColor: "#F8FAFC",
+                    backgroundColor: "var(--primary-dark, #024DAF)",
+                    minWidth: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      width: "100%",
+                    }}
+                  >
                     {column.label}
                   </Typography>
                 </Box>
@@ -876,6 +908,7 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                       display: "grid",
                       gridTemplateColumns: tableGridTemplate,
                       alignItems: "stretch",
+                      width: "100%",
                     }}
                   >
                     {tableColumns.map((column) => {
@@ -891,6 +924,8 @@ const AllDeposit = ({ title = "All Deposit", buttonLabel = "All Deposit" }) => {
                             px: 2,
                             py: 1.4,
                             borderBottom: "1px solid #E5E7EB",
+                            minWidth: 0,
+                            overflow: column.key === "remarks" ? "visible" : "hidden",
                             ...(column.key === "remarks" && {
                               wordBreak: "break-word",
                               overflowWrap: "break-word",

@@ -3,7 +3,13 @@ import { Dialog, DialogContent, Box, Typography, IconButton } from "@mui/materia
 import CloseIcon from "@mui/icons-material/Close";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
-const ETicketDownloadDialog = ({ open, onClose, onDownloadWithPrice, onDownloadWithoutPrice }) => {
+const ETicketDownloadDialog = ({
+  open,
+  onClose,
+  onDownloadWithPrice,
+  onDownloadWithoutPrice,
+  title = "E-Ticket Download",
+}) => {
   const optionSx = {
     display: "flex",
     alignItems: "center",
@@ -54,7 +60,7 @@ const ETicketDownloadDialog = ({ open, onClose, onDownloadWithPrice, onDownloadW
       >
         <FileDownloadIcon sx={{ fontSize: 16 }} />
         <Typography sx={{ fontSize: 15, fontWeight: 700, flex: 1 }}>
-          E-Ticket Download
+          {title}
         </Typography>
         
       </Box>

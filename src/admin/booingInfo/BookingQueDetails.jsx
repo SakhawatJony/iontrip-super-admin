@@ -402,7 +402,7 @@ const BookingQueDetails = () => {
                   };
                   if (isBookedOrCancelled) {
                     return (
-                      <MenuItem onClick={() => goToInvoice("Customer Invoice")}>
+                      <MenuItem onClick={() => goToInvoice("Booking Invoice")}>
                         Booking Invoice
                       </MenuItem>
                     );

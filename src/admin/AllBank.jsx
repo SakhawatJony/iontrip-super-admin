@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 const headerTitleSx = {
   fontSize: 22,
@@ -126,7 +127,7 @@ const AllBank = ({ title = "All Bank" }) => {
           // Add action column
           columns.push({ key: "action", label: "Action", width: "120px" });
           setTableColumns(columns);
-          setTableGridTemplate(columns.map((col) => col.width).join(" "));
+          setTableGridTemplate(fluidGridTemplateFromColumns(columns));
         }
       }
     } catch (err) {
@@ -768,6 +769,39 @@ const AllBank = ({ title = "All Bank" }) => {
     >
       <Box
         sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddBankModal}
+          sx={{
+            textTransform: "none",
+            fontSize: 14,
+            fontWeight: 700,
+            bgcolor: "#FFFFFF",
+            color: "var(--primary-dark, #024DAF)",
+            "&:hover": { bgcolor: "#EAEFF5" },
+            height: 36,
+            px: 2,
+            borderRadius: 1,
+            boxShadow: "none",
+          }}
+        >
+          Add Bank
+        </Button>
+      </Box>
+
+      <Box
+        sx={{
           backgroundColor: "#FFFFFF",
           borderRadius: 2,
           border: "1px solid #E5E7EB",
@@ -780,54 +814,23 @@ const AllBank = ({ title = "All Bank" }) => {
       >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenAddBankModal}
-              sx={{
-                textTransform: "none",
-                fontSize: 13,
-                fontWeight: 600,
-                px: 2.5,
-                py: 1,
-                height: 36,
-                backgroundColor: "#000000",
-                "&:hover": { backgroundColor: "#1a1a1a" },
-              }}
-            >
-              Add Bank
-            </Button>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
-            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
           }}
         >
           {tableColumns.length > 0 && (
-            <Box sx={{ minWidth: tableColumns.length * 150 }}>
+            <Box sx={{ width: "100%", minWidth: 0 }}>
               {/* Table Header */}
               <Box
                 sx={{
                   display: "grid",
                   gridTemplateColumns: tableGridTemplate,
                   alignItems: "stretch",
-                  backgroundColor: "#F8FAFC",
+                  width: "100%",
+                  backgroundColor: "var(--primary-dark, #024DAF)",
                 }}
               >
                 {tableColumns.map((column) => (
@@ -839,10 +842,22 @@ const AllBank = ({ title = "All Bank" }) => {
                       px: 2,
                       py: 1,
                       borderBottom: "1px solid #E5E7EB",
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: "var(--primary-dark, #024DAF)",
+                      minWidth: 0,
+                      overflow: "hidden",
                     }}
                   >
-                    <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#FFFFFF",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        width: "100%",
+                      }}
+                    >
                       {column.label}
                     </Typography>
                   </Box>
@@ -870,6 +885,7 @@ const AllBank = ({ title = "All Bank" }) => {
                       display: "grid",
                       gridTemplateColumns: tableGridTemplate,
                       alignItems: "stretch",
+                      width: "100%",
                     }}
                   >
                     {tableColumns.map((column) => {

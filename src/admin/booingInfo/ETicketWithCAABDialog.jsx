@@ -41,6 +41,7 @@ const ETicketWithCAABDialog = ({
   onDownloadWithoutPrice,
   defaultAgencyName,
   defaultCivilAviationNumber,
+  title = "E-Ticket Download",
 }) => {
   const { user } = useAuth();
   const [agencyName, setAgencyName] = useState("");
@@ -105,7 +106,7 @@ const ETicketWithCAABDialog = ({
       >
         <FileDownloadIcon sx={{ fontSize: 18 }} />
         <Typography sx={{ fontSize: 16, fontWeight: 700, flex: 1 }}>
-          E-Ticket Download
+          {title}
         </Typography>
       </Box>
       <DialogContent sx={{ backgroundColor: "#fff", pt: 1, pb: 1 }}>

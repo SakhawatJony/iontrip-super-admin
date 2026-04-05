@@ -56,6 +56,7 @@ const statusColor = (status) => {
 
 export default function AllBlog() {
   const navigate = useNavigate();
+  const title = "All Blog";
 
   const [tab] = useState(0); // kept for compatibility with your UI
   const [action, setAction] = useState("");
@@ -168,6 +169,20 @@ export default function AllBlog() {
 
   return (
     <Box sx={{ bgcolor: C.pageBg, minHeight: "100vh", p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+      </Box>
+
       <Card
         sx={{
           borderRadius: 2,

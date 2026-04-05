@@ -11,6 +11,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 const headerTitleSx = {
   fontSize: 22,
@@ -18,7 +19,7 @@ const headerTitleSx = {
   color: "#0F172A",
 };
 
-const LedgerReport = ({ title = "All Transactions" }) => {
+const LedgerReport = ({ title = "Transaction History" }) => {
   const navigate = useNavigate();
   const { token } = useAuth();
   
@@ -38,7 +39,7 @@ const LedgerReport = ({ title = "All Transactions" }) => {
   const [dateTo, setDateTo] = useState(null);
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   const fetchTransactions = useCallback(async () => {
     const authToken = token || localStorage.getItem("adminToken") || "";
@@ -132,7 +133,7 @@ const LedgerReport = ({ title = "All Transactions" }) => {
             { key: "createdAt", label: "Created At", width: "150px" },
           ];
           setTableColumns(columns);
-          setTableGridTemplate(columns.map((col) => col.width).join(" "));
+          setTableGridTemplate(fluidGridTemplateFromColumns(columns));
         }
       }
     } catch (err) {
@@ -285,6 +286,39 @@ const LedgerReport = ({ title = "All Transactions" }) => {
     >
       <Box
         sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+          onClick={handleToggleFilters}
+          sx={{
+            textTransform: "none",
+            fontSize: 12,
+            fontWeight: 700,
+            bgcolor: "#FFFFFF",
+            color: "var(--primary-dark, #024DAF)",
+            borderColor: "rgba(2, 77, 175, 0.35)",
+            "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
+            height: 34,
+            px: 1.8,
+            borderRadius: 1,
+          }}
+        >
+          {showFilters ? "Hide Filter" : "More Filter"}
+        </Button>
+      </Box>
+
+      <Box
+        sx={{
           backgroundColor: "#FFFFFF",
           borderRadius: 2,
           border: "1px solid #E5E7EB",
@@ -295,18 +329,6 @@ const LedgerReport = ({ title = "All Transactions" }) => {
           gap: 2.5,
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Typography sx={headerTitleSx}>{title}</Typography>
-        </Box>
-
         <Box
           sx={{
             display: "flex",
@@ -722,23 +744,6 @@ const LedgerReport = ({ title = "All Transactions" }) => {
               )}
             </Box>
           )}
-          <Button
-            variant="contained"
-            startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
-            onClick={handleToggleFilters}
-            sx={{
-              textTransform: "none",
-              fontSize: 11.5,
-              fontWeight: 600,
-              height: 32,
-              px: 1.5,
-              backgroundColor: "#0F2F56",
-              "&:hover": { backgroundColor: "#0B2442" },
-              ml: "auto",
-            }}
-          >
-            {showFilters ? "Hide Filter" : "More Filter"}
-          </Button>
         </Box>
 
         <Box
@@ -746,19 +751,20 @@ const LedgerReport = ({ title = "All Transactions" }) => {
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
-            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
           }}
         >
           {tableColumns.length > 0 && (
-            <Box sx={{ minWidth: tableColumns.length * 150 }}>
+            <Box sx={{ width: "100%", minWidth: 0 }}>
               {/* Table Header */}
               <Box
                 sx={{
                   display: "grid",
                   gridTemplateColumns: tableGridTemplate,
                   alignItems: "stretch",
-                  backgroundColor: "#F8FAFC",
+                  width: "100%",
+                  backgroundColor: "var(--primary-dark, #024DAF)",
                 }}
               >
                 {tableColumns.map((column) => (
@@ -770,10 +776,22 @@ const LedgerReport = ({ title = "All Transactions" }) => {
                       px: 2,
                       py: 1,
                       borderBottom: "1px solid #E5E7EB",
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: "var(--primary-dark, #024DAF)",
+                      minWidth: 0,
+                      overflow: "hidden",
                     }}
                   >
-                    <Typography sx={{ fontSize: 11, fontWeight: 600, color: "var(--primary-color, #123D6E)" }}>
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#FFFFFF",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        width: "100%",
+                      }}
+                    >
                       {column.label}
                     </Typography>
                   </Box>
@@ -803,6 +821,7 @@ const LedgerReport = ({ title = "All Transactions" }) => {
                         display: "grid",
                         gridTemplateColumns: tableGridTemplate,
                         alignItems: "stretch",
+                        width: "100%",
                       }}
                     >
                       {tableColumns.map((column) => {

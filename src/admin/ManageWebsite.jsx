@@ -184,6 +184,7 @@ function SectionHeading({ children, first, tone }) {
 }
 
 export default function ManageWebsite() {
+  const title = "Manage Website";
   const faviconRef = useRef(null);
   const logoRef = useRef(null);
 
@@ -228,6 +229,20 @@ export default function ManageWebsite() {
         m: { xs: -2, md: -3 },
       }}
     >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+      </Box>
+
       <SectionHeading first>Website Setting</SectionHeading>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>

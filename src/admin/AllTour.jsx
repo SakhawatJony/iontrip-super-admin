@@ -3,6 +3,7 @@ import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useNavigate } from "react-router-dom";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 export default function AllTour() {
   const navigate = useNavigate();
@@ -20,7 +21,10 @@ export default function AllTour() {
     [],
   );
 
-  const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+  const tableGridTemplate = useMemo(
+    () => fluidGridTemplateFromColumns(tableColumns),
+    [tableColumns],
+  );
 
   const [loading, setLoading] = useState(true);
   const [tours, setTours] = useState([]);
@@ -99,16 +103,17 @@ export default function AllTour() {
           border: "1px solid #E5E7EB",
           borderRadius: 1.5,
           backgroundColor: "#FFFFFF",
-          overflowX: "auto",
-          overflowY: "auto",
+          overflowX: "hidden",
+          width: "100%",
         }}
       >
-        <Box sx={{ minWidth: 950 }}>
+        <Box sx={{ width: "100%", minWidth: 0 }}>
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: tableGridTemplate,
               alignItems: "stretch",
+              width: "100%",
               backgroundColor: "var(--primary-dark, #024DAF)",
             }}
           >
@@ -122,9 +127,23 @@ export default function AllTour() {
                   py: 1,
                   borderBottom: "1px solid #E5E7EB",
                   backgroundColor: "var(--primary-dark, #024DAF)",
+                  minWidth: 0,
+                  overflow: "hidden",
                 }}
               >
-                <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>{column.label}</Typography>
+                <Typography
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#FFFFFF",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    width: "100%",
+                  }}
+                >
+                  {column.label}
+                </Typography>
               </Box>
             ))}
           </Box>
@@ -145,6 +164,7 @@ export default function AllTour() {
                   display: "grid",
                   gridTemplateColumns: tableGridTemplate,
                   alignItems: "stretch",
+                  width: "100%",
                 }}
               >
                 {tableColumns.map((column) => {
@@ -158,6 +178,8 @@ export default function AllTour() {
                         px: 2,
                         py: 1.4,
                         borderBottom: "1px solid #E5E7EB",
+                        minWidth: 0,
+                        overflow: "hidden",
                       }}
                     >
                       {column.key === "createdAt" ? (

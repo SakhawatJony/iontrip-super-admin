@@ -3,6 +3,7 @@ import { Box, Button, CircularProgress, Paper, Typography } from "@mui/material"
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useNavigate } from "react-router-dom";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 export default function AllVisa() {
   const navigate = useNavigate();
@@ -21,7 +22,10 @@ export default function AllVisa() {
     [],
   );
 
-  const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+  const tableGridTemplate = useMemo(
+    () => fluidGridTemplateFromColumns(tableColumns),
+    [tableColumns],
+  );
 
   const [loading, setLoading] = useState(true);
   const [visas, setVisas] = useState([]);
@@ -102,16 +106,17 @@ export default function AllVisa() {
           border: "1px solid #E5E7EB",
           borderRadius: 1.5,
           backgroundColor: "#FFFFFF",
-          overflowX: "auto",
-          overflowY: "auto",
+          overflowX: "hidden",
+          width: "100%",
         }}
       >
-        <Box sx={{ minWidth: 950 }}>
+        <Box sx={{ width: "100%", minWidth: 0 }}>
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: tableGridTemplate,
               alignItems: "stretch",
+              width: "100%",
               backgroundColor: "var(--primary-dark, #024DAF)",
             }}
           >
@@ -125,9 +130,21 @@ export default function AllVisa() {
                   py: 1,
                   borderBottom: "1px solid #E5E7EB",
                   backgroundColor: "var(--primary-dark, #024DAF)",
+                  minWidth: 0,
+                  overflow: "hidden",
                 }}
               >
-                <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
+                <Typography
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#FFFFFF",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    width: "100%",
+                  }}
+                >
                   {column.label}
                 </Typography>
               </Box>
@@ -150,6 +167,7 @@ export default function AllVisa() {
                   display: "grid",
                   gridTemplateColumns: tableGridTemplate,
                   alignItems: "stretch",
+                  width: "100%",
                 }}
               >
                 {tableColumns.map((column) => {
@@ -163,6 +181,8 @@ export default function AllVisa() {
                         px: 2,
                         py: 1.4,
                         borderBottom: "1px solid #E5E7EB",
+                        minWidth: 0,
+                        overflow: "hidden",
                       }}
                     >
                       {column.key === "createdAt" ? (

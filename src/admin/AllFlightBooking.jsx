@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 // Status mapping from API to display labels
 const statusLabelMap = {
@@ -30,7 +31,7 @@ const tableColumns = [
   { key: "pnr", label: "PNR", width: "100px" },
   { key: "bookingTime", label: "Booking Time", width: "150px" },
   { key: "dueAmount", label: "Due Amount", width: "120px" },
-  { key: "grossFare", label: "Gross Fare", width: "120px" },
+  { key: "grossFare", label: "Base Fare", width: "120px" },
   { key: "ticketFare", label: "Ticket Fare", width: "120px" },
   { key: "pax", label: "PAX", width: "80px" },
   { key: "airline", label: "Airline", width: "150px" },
@@ -39,7 +40,7 @@ const tableColumns = [
   { key: "status", label: "Status", width: "110px" },
 ];
 
-const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Booking" },
@@ -70,7 +71,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
   const [bookingIdFilter, setBookingIdFilter] = useState("");
   const [pnrFilter, setPnrFilter] = useState("");
   const [airlinesFilter, setAirlinesFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [logoErrors, setLogoErrors] = useState({});
@@ -109,7 +110,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
   };
 
   const handleToggleFilters = () => {
-    setShowFilters(!showFilters);
+    setShowFilters((prev) => !prev);
   };
 
   const handleOpenDetailsModal = (booking) => {
@@ -427,15 +428,19 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
         <Typography
           onClick={() => handleBookingIdClick(bookingId || value)}
           sx={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 600,
             color: "#111827",
             backgroundColor: "#EEF2F6",
             borderRadius: 0.8,
-            px: 1,
-            py: 0.35,
-            width: "fit-content",
+            px: 0.75,
+            py: 0.25,
+            maxWidth: "100%",
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            display: "block",
             cursor: bookingId && bookingId !== "-" ? "pointer" : "default",
             "&:hover": {
               backgroundColor: bookingId && bookingId !== "-" ? "#D1D5DB" : "#EEF2F6",
@@ -461,14 +466,17 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
       return (
         <Typography
           sx={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 600,
             color: statusColors.color,
             backgroundColor: statusColors.bg,
             borderRadius: 0.8,
-            px: 1.2,
-            py: 0.4,
-            width: "fit-content",
+            px: 1,
+            py: 0.3,
+            maxWidth: "100%",
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             textTransform: "capitalize",
           }}
@@ -501,7 +509,9 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1,
+            gap: 0.5,
+            minWidth: 0,
+            width: "100%",
           }}
         >
           {logoUrl && airlineCode && !hasLogoError ? (
@@ -515,8 +525,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 }
               }}
               sx={{
-                width: 32,
-                height: 20,
+                width: 26,
+                height: 16,
                 objectFit: "contain",
                 flexShrink: 0,
               }}
@@ -524,8 +534,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           ) : (
             <Box
               sx={{
-                width: 32,
-                height: 20,
+                width: 26,
+                height: 16,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -542,10 +552,15 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           )}
           <Typography
             sx={{
-              fontSize: 11,
+              fontSize: 10,
               color: "#111827",
               whiteSpace: "nowrap",
               textTransform: "capitalize",
+              lineHeight: 1.2,
+              minWidth: 0,
+              flex: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {capitalizedAirline}
@@ -557,8 +572,13 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     return (
       <Typography
         sx={{
-          fontSize: 11,
+          fontSize: 10,
           color: "#111827",
+          lineHeight: 1.25,
+          minWidth: 0,
+          width: "100%",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
           whiteSpace: "nowrap",
         }}
       >
@@ -571,7 +591,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     <Box
       sx={{
         minHeight: "100vh",
-      
+        px: { xs: 2, md: 1 },
         py: 4,
       }}
     >
@@ -614,7 +634,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           py: { xs: 2.5, md: 2 },
           display: "flex",
           flexDirection: "column",
-          gap: 2.5,
+          gap: 1.75,
         }}
       >
         
@@ -626,7 +646,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
             gap: 2,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", minWidth: 0 }}>
             {getStatusCards().map((card) => (
               <Box
                 key={card.label}
@@ -707,35 +727,35 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
               {showFilters ? "Hide Filter" : "More Filter"}
             </Button>
           </Box>
-
-          <Menu
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleStatusClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <MenuItem
-                key={option.value}
-                onClick={() => handleStatusSelect(option.value)}
-                selected={status === option.value}
-                sx={{
-                  fontSize: 12,
-                  fontWeight: status === option.value ? 600 : 400,
-                }}
-              >
-                {option.label}
-              </MenuItem>
-            ))}
-          </Menu>
         </Box>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleStatusClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+        >
+          {STATUS_OPTIONS.map((option) => (
+            <MenuItem
+              key={option.value}
+              onClick={() => handleStatusSelect(option.value)}
+              selected={status === option.value}
+              sx={{
+                fontSize: 12,
+                fontWeight: status === option.value ? 600 : 400,
+              }}
+            >
+              {option.label}
+            </MenuItem>
+          ))}
+        </Menu>
 
         <Box
           sx={{
@@ -763,6 +783,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -791,6 +812,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -819,6 +841,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                   alignItems: "center",
                   gap: 1,
                   backgroundColor: "#EAF2FF",
+                  border: "1px solid var(--primary-dark, #024DAF)",
                   borderRadius: 1,
                   px: 1.2,
                   height: 32,
@@ -872,16 +895,17 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
-            overflowY: "auto",
+            overflowX: "hidden",
+            width: "100%",
           }}
         >
-          <Box sx={{ minWidth: 1200 }}>
+          <Box sx={{ width: "100%", minWidth: 0 }}>
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
+                width: "100%",
                 backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
@@ -891,13 +915,26 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    px: 2,
-                    py: 1,
+                    px: 1.25,
+                    py: 0.5,
                     borderBottom: "1px solid rgba(255, 255, 255, 0.18)",
                     backgroundColor: "transparent",
+                    minWidth: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
+                  <Typography
+                    sx={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      lineHeight: 1.2,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      width: "100%",
+                    }}
+                  >
                     {column.label}
                   </Typography>
                 </Box>
@@ -925,6 +962,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                       display: "grid",
                       gridTemplateColumns: tableGridTemplate,
                       alignItems: "stretch",
+                      width: "100%",
                     }}
                   >
                     {tableColumns.map((column) => {
@@ -937,9 +975,11 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            px: 2,
-                            py: 1.4,
+                            px: 1.25,
+                            py: 0.65,
                             borderBottom: "1px solid #E5E7EB",
+                            minWidth: 0,
+                            overflow: "hidden",
                           }}
                         >
                           {renderCell(column.key, value, originalBookingId, carrierCode, booking)}
@@ -1156,7 +1196,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Gross Fare</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Base Fare</Typography>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
                       {selectedBooking.farecurrency || "BDT"} {selectedBooking.netPrice || "0.00"}
                     </Typography>

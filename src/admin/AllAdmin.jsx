@@ -11,12 +11,14 @@ import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 
 const headerTitleSx = {
   fontSize: 22,
@@ -58,7 +60,7 @@ const tableColumns = [
   { key: "action", label: "Action", width: "120px" },
 ];
 
-const tableGridTemplate = tableColumns.map((col) => col.width).join(" ");
+const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Admins" },
@@ -73,7 +75,7 @@ const ROLE_OPTIONS = [
   { value: "Manager", label: "Manager" },
 ];
 
-const AllAdmin = ({ title = "All Admin" }) => {
+const AllAdmin = ({ title = "Admin History" }) => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   
@@ -997,6 +999,60 @@ const AllAdmin = ({ title = "All Admin" }) => {
     >
       <Box
         sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          p: 1,
+          borderRadius: 1,
+          bgcolor: "var(--primary-dark, #024DAF)",
+        }}
+      >
+        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={handleOpenAddModal}
+            sx={{
+              textTransform: "none",
+              fontSize: 14,
+              fontWeight: 700,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #024DAF)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+              height: 36,
+              px: 2,
+              borderRadius: 1,
+              boxShadow: "none",
+            }}
+            startIcon={<AddIcon />}
+          >
+            Add Admin
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => fetchAdmins()}
+            sx={{
+              textTransform: "none",
+              fontSize: 14,
+              fontWeight: 700,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #024DAF)",
+              borderColor: "rgba(2, 77, 175, 0.35)",
+              "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
+              height: 36,
+              px: 2,
+              borderRadius: 1,
+            }}
+            startIcon={<RefreshIcon />}
+          >
+            Reload History
+          </Button>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
           backgroundColor: "#FFFFFF",
           borderRadius: 2,
           border: "1px solid #E5E7EB",
@@ -1160,18 +1216,20 @@ const AllAdmin = ({ title = "All Admin" }) => {
             border: "1px solid #E5E7EB",
             borderRadius: 1.5,
             backgroundColor: "#FFFFFF",
-            overflowX: "auto",
+            overflowX: "hidden",
             maxHeight: { xs: "55vh", md: "65vh" },
             overflowY: "scroll",
+            width: "100%",
           }}
           className="table-scrollbar-primary-dark"
         >
-          <Box sx={{ minWidth: 1200 }}>
+          <Box sx={{ width: "100%", minWidth: 0 }}>
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: tableGridTemplate,
                 alignItems: "stretch",
+                width: "100%",
                 backgroundColor: "var(--primary-dark, #024DAF)",
               }}
             >
@@ -1185,9 +1243,21 @@ const AllAdmin = ({ title = "All Admin" }) => {
                     py: 1,
                     borderBottom: "1px solid #E5E7EB",
                     backgroundColor: "var(--primary-dark, #024DAF)",
+                    minWidth: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF" }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      width: "100%",
+                    }}
+                  >
                     {column.label}
                   </Typography>
                 </Box>
@@ -1215,6 +1285,7 @@ const AllAdmin = ({ title = "All Admin" }) => {
                       display: "grid",
                       gridTemplateColumns: tableGridTemplate,
                       alignItems: "stretch",
+                      width: "100%",
                     }}
                   >
                     {tableColumns.map((column) => {
