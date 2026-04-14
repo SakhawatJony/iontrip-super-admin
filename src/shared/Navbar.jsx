@@ -1,13 +1,10 @@
-import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import logoPng from "../assets/updatedslogo2.png";
 
 export default function Navbar() {
   return (
-<Box sx={{bgcolor:"white"}}>
+<Box sx={{ bgcolor: "var(--primary-dark, #024DAF)" }}>
 <Toolbar
         sx={{
          
@@ -15,13 +12,18 @@ export default function Navbar() {
           px: { xs: 2, md: 4 },
         }}
       >
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ fontWeight: 600, color: "#1f2a44" }}
-        >
-          IonTrip
-        </Typography>
+        <Box
+          component="img"
+          src={logoPng}
+          alt="IonTrip"
+          sx={{
+            height: { xs: 36, sm: 40 },
+            width: "auto",
+            maxWidth: 200,
+            objectFit: "contain",
+            display: "block",
+          }}
+        />
         <Box sx={{ flexGrow: 1 }} />
         {/* <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
          

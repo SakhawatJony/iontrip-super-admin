@@ -29,6 +29,7 @@ import BookingQuePassengerList from "./BookingQuePassengerList";
 import BookingQueFareDetails from "./BookingQueFareDetails";
 import BookingQueSupport from "./BookingQueSupport";
 import BookingQueSessionTime from "./BookingQueSessionTime";
+import AdminPageTitleBar from "../AdminPageTitleBar.jsx";
 
 const BookingQueDetails = () => {
   const location = useLocation();
@@ -341,6 +342,7 @@ const BookingQueDetails = () => {
 
   return (
     <Box sx={{ minHeight: "100vh", px: 4, py: 4 }}>
+      <AdminPageTitleBar title="Booking Queue Details" />
       <Grid container spacing={3}>
         <Grid item xs={12} lg={9}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>

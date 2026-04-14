@@ -21,6 +21,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../../config/api.js";
+import AdminPageTitleBar from "../AdminPageTitleBar.jsx";
 
 const labelAboveSx = { fontSize: 14, color: "var(--primary-color)", fontWeight: 500, mb: 0.5 };
 const inputSx = {
@@ -137,26 +138,26 @@ const MakeTicketed = () => {
 
   return (
     <Grid container sx={{ minHeight: "100vh", px: 1.5, py: 3 }} spacing={3}>
-      {/* Header */}
       <Grid item xs={12}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
-            variant="outlined"
-            sx={{
-              textTransform: "capitalize",
-              borderColor: "var(--primary-color)",
-              color: "var(--primary-color)",
-              "&:hover": { borderColor: "var(--primary-dark)", color: "var(--primary-dark)", bgcolor: "rgba(18, 61, 110, 0.04)" },
-            }}
-          >
-            Back
-          </Button>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--primary-color)" }}>
-            Make Ticketed #{displayId}
-          </Typography>
-        </Box>
+        <AdminPageTitleBar
+          title={`Make Ticketed #${displayId}`}
+          action={
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(-1)}
+              variant="outlined"
+              sx={{
+                textTransform: "capitalize",
+                bgcolor: "#FFFFFF",
+                color: "var(--primary-dark, #024DAF)",
+                borderColor: "rgba(255,255,255,0.5)",
+                "&:hover": { bgcolor: "#EAEFF5", borderColor: "#FFFFFF" },
+              }}
+            >
+              Back
+            </Button>
+          }
+        />
       </Grid>
 
       {/* Top form - uniform 3-column grid, 2 rows */}

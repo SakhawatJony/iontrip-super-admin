@@ -1,10 +1,11 @@
 import React from "react";
 import { Box, Paper, Typography } from "@mui/material";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 export default function FlightInfo() {
   return (
     <Box>
-      <Typography sx={{ fontSize: 22, fontWeight: 700, mb: 2 }}>Flight Info</Typography>
+      <AdminPageTitleBar title="Flight Info" />
       <Paper sx={{ p: 2, borderRadius: 2 }}>
         <Typography sx={{ color: "text.secondary" }}>
           Flight info details will be shown here.
@@ -13,4 +14,3 @@ export default function FlightInfo() {
     </Box>
   );
 }
-

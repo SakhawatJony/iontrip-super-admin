@@ -19,12 +19,7 @@ import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
-
-const headerTitleSx = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#0F172A",
-};
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const inputLabelSx = {
   fontSize: 13,
@@ -997,59 +992,51 @@ const AllAdmin = ({ title = "Admin History" }) => {
         py: 4,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button
-            variant="contained"
-            onClick={handleOpenAddModal}
-            sx={{
-              textTransform: "none",
-              fontSize: 14,
-              fontWeight: 700,
-              bgcolor: "#FFFFFF",
-              color: "var(--primary-dark, #024DAF)",
-              "&:hover": { bgcolor: "#EAEFF5" },
-              height: 36,
-              px: 2,
-              borderRadius: 1,
-              boxShadow: "none",
-            }}
-            startIcon={<AddIcon />}
-          >
-            Add Admin
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => fetchAdmins()}
-            sx={{
-              textTransform: "none",
-              fontSize: 14,
-              fontWeight: 700,
-              bgcolor: "#FFFFFF",
-              color: "var(--primary-dark, #024DAF)",
-              borderColor: "rgba(2, 77, 175, 0.35)",
-              "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
-              height: 36,
-              px: 2,
-              borderRadius: 1,
-            }}
-            startIcon={<RefreshIcon />}
-          >
-            Reload History
-          </Button>
-        </Box>
-      </Box>
+      <AdminPageTitleBar
+        title={title}
+        action={
+          <>
+            <Button
+              variant="contained"
+              onClick={handleOpenAddModal}
+              sx={{
+                textTransform: "none",
+                fontSize: 14,
+                fontWeight: 700,
+                bgcolor: "#FFFFFF",
+                color: "var(--primary-dark, #024DAF)",
+                "&:hover": { bgcolor: "#EAEFF5" },
+                height: 36,
+                px: 2,
+                borderRadius: 1,
+                boxShadow: "none",
+              }}
+              startIcon={<AddIcon />}
+            >
+              Add Admin
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => fetchAdmins()}
+              sx={{
+                textTransform: "none",
+                fontSize: 14,
+                fontWeight: 700,
+                bgcolor: "#FFFFFF",
+                color: "var(--primary-dark, #024DAF)",
+                borderColor: "rgba(2, 77, 175, 0.35)",
+                "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
+                height: 36,
+                px: 2,
+                borderRadius: 1,
+              }}
+              startIcon={<RefreshIcon />}
+            >
+              Reload History
+            </Button>
+          </>
+        }
+      />
 
       <Box
         sx={{

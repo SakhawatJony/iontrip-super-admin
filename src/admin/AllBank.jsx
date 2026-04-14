@@ -12,12 +12,7 @@ import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
-
-const headerTitleSx = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#0F172A",
-};
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const inputLabelSx = {
   fontSize: 13,
@@ -767,38 +762,30 @@ const AllBank = ({ title = "All Bank" }) => {
         py: 4,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddBankModal}
-          sx={{
-            textTransform: "none",
-            fontSize: 14,
-            fontWeight: 700,
-            bgcolor: "#FFFFFF",
-            color: "var(--primary-dark, #024DAF)",
-            "&:hover": { bgcolor: "#EAEFF5" },
-            height: 36,
-            px: 2,
-            borderRadius: 1,
-            boxShadow: "none",
-          }}
-        >
-          Add Bank
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title={title}
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddBankModal}
+            sx={{
+              textTransform: "none",
+              fontSize: 14,
+              fontWeight: 700,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #024DAF)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+              height: 36,
+              px: 2,
+              borderRadius: 1,
+              boxShadow: "none",
+            }}
+          >
+            Add Bank
+          </Button>
+        }
+      />
 
       <Box
         sx={{

@@ -11,6 +11,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 // Status mapping from API to display labels
 const statusLabelMap = {
@@ -595,20 +596,9 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
         py: 4,
       }}
     >
-      <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-            p: 1,
-            borderRadius: 1,
-            bgcolor: "var(--primary-dark, #024DAF)",
-          }}
-        >
-          <Typography sx={{ fontSize: 20, fontWeight: 500, color: "#FFFFFF" }}>
-            {headerText}
-          </Typography>
+      <AdminPageTitleBar
+        title={headerText}
+        action={
           <Button
             variant="contained"
             onClick={() => fetchBookings()}
@@ -623,7 +613,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           >
             Reload History
           </Button>
-        </Box>
+        }
+      />
 
       <Box
         sx={{

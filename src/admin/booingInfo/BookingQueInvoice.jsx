@@ -14,6 +14,7 @@ import AgentInvoiceDownloadDialog from "./AgentInvoiceDownloadDialog";
 import AgentInvoiceWithCAABDialog from "./AgentInvoiceWithCAABDialog";
 import ETicketPdfLayout from "./ETicketPdfLayout";
 import { downloadElementAsPdf } from "../../utils/downloadPdf";
+import AdminPageTitleBar from "../AdminPageTitleBar.jsx";
 
 const BookingQueInvoice = () => {
   const navigate = useNavigate();
@@ -62,11 +63,14 @@ const BookingQueInvoice = () => {
 
   if (!bookingData) {
     return (
-      <Box sx={{ minHeight: "100vh", px: 4, py: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
-        <Typography sx={{ fontSize: 16, color: "#6B7280" }}>No booking data. Open invoice from booking details.</Typography>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/dashboard/bookingqueuedetails")} variant="outlined">
-          Back to Booking
-        </Button>
+      <Box sx={{ minHeight: "100vh", px: 4, py: 4, width: "100%" }}>
+        <AdminPageTitleBar title="Invoice Download" />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, py: 4 }}>
+          <Typography sx={{ fontSize: 16, color: "#6B7280" }}>No booking data. Open invoice from booking details.</Typography>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/dashboard/bookingqueuedetails")} variant="outlined">
+            Back to Booking
+          </Button>
+        </Box>
       </Box>
     );
   }
@@ -74,8 +78,11 @@ const BookingQueInvoice = () => {
   return (
     <Box sx={{ minHeight: "100vh", width: "100%" }}>
       <Box sx={{ px: 4, py: 4, width: "100%" }}>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3, justifyContent: "flex-end" }}>
-          {invoiceType === "Agent Invoice" && (
+        <AdminPageTitleBar
+          title="Invoice Download"
+          action={
+            <>
+              {invoiceType === "Agent Invoice" && (
             <>
               <Button
                 startIcon={<FileDownloadIcon />}
@@ -185,7 +192,9 @@ const BookingQueInvoice = () => {
               </Button>
             </>
           )}
-        </Box>
+            </>
+          }
+        />
         <EditCustomerFareDialog
           open={editFareDialogOpen}
           onClose={() => setEditFareDialogOpen(false)}

@@ -1,11 +1,11 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 export default function AccountProfile({ title = "Profile" }) {
   return (
     <Box>
-      <Typography sx={{ fontSize: 22, fontWeight: 700 }}>{title}</Typography>
+      <AdminPageTitleBar title={title} />
     </Box>
   );
 }
-

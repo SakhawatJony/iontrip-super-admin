@@ -4,6 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 import { toast } from "react-toastify";
 
 export default function AddTour() {
@@ -143,33 +144,25 @@ export default function AddTour() {
 
   return (
     <Box sx={{ bgcolor: C.pageBg, minHeight: "100vh", p: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: C.primaryDark,
-        }}
-      >
-        <Typography sx={{ fontSize: 20, fontWeight: 500, color: "#FFFFFF" }}>Add Tour</Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/dashboard/tour/alltour")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            bgcolor: "#FFFFFF",
-            color: C.primaryDark,
-            "&:hover": { bgcolor: "#EAEFF5" },
-          }}
-          endIcon={<RefreshIcon />}
-        >
-          Tour History
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title="Add Tour"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/tour/alltour")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              bgcolor: "#FFFFFF",
+              color: C.primaryDark,
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            endIcon={<RefreshIcon />}
+          >
+            Tour History
+          </Button>
+        }
+      />
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 2, borderRadius: 2, bgcolor: C.cardBg }}>
         {/* Basic Information */}

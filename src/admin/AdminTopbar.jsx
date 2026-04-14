@@ -20,9 +20,9 @@ export default function AdminTopbar() {
         borderBottom: "1px solid #E0E0E0",
       }}
     >
-      <Typography sx={{ fontWeight: 700, color: "#333333", fontSize: 18 }}>
+      {/* <Typography sx={{ fontWeight: 700, color: "#333333", fontSize: 18 }}>
         IonTrip
-      </Typography>
+      </Typography> */}
       <Box sx={{ flexGrow: 1 }} />
       <TextField
         size="small"

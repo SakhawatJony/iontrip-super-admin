@@ -4,6 +4,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useNavigate } from "react-router-dom";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 export default function AllVisa() {
   const navigate = useNavigate();
@@ -71,35 +72,25 @@ export default function AllVisa() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF" }}>
-          Visa History
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/dashboard/visa/addvisa")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 800,
-            bgcolor: "#FFFFFF",
-            color: "var(--primary-dark, #0F2F56)",
-            "&:hover": { bgcolor: "#EAEFF5" },
-          }}
-          startIcon={<AddCircleOutlineIcon />}
-        >
-          Add Visa
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title="Visa History"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/visa/addvisa")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 800,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #0F2F56)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            startIcon={<AddCircleOutlineIcon />}
+          >
+            Add Visa
+          </Button>
+        }
+      />
 
       <Box
         sx={{

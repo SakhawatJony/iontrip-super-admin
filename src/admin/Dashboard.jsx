@@ -13,6 +13,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 import PaymentIcon from "@mui/icons-material/Payment";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -728,22 +729,7 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ width: "100%", pb: 2 }}>
-      <Box
-        sx={{
-          mb: 2,
-          p: { xs: 2, md: 1 },
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-          border: "1px solid rgba(255,255,255,0.12)",
-        }}
-      >
-        <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
-          Dashboard
-        </Typography>
-        <Typography sx={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.85)", mt: 0.5 }}>
-          OTA Travel Management System
-        </Typography>
-      </Box>
+      <AdminPageTitleBar title="Dashboard" subtitle="OTA Travel Management System" />
 
       <Grid container spacing={2}>
         <Grid item xs={12}>

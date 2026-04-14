@@ -14,6 +14,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const inputLabelSx = {
   fontSize: 13,
@@ -172,28 +173,22 @@ const AddAdmin = () => {
           mx: "auto",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <IconButton
-            onClick={() => navigate("/dashboard/settings/alladmin")}
-            sx={{
-              padding: 1,
-              "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.04)",
-              },
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography
-            sx={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: "#0F172A",
-            }}
-          >
-            Add Admin
-          </Typography>
-        </Box>
+        <AdminPageTitleBar
+          title="Add Admin"
+          action={
+            <IconButton
+              onClick={() => navigate("/dashboard/settings/alladmin")}
+              aria-label="Back to all admins"
+              sx={{
+                color: "#FFFFFF",
+                border: "1px solid rgba(255,255,255,0.35)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
+              }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          }
+        />
 
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={2}>

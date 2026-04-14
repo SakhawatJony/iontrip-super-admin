@@ -35,6 +35,7 @@ import Swal from "sweetalert2";
 import axios from "axios";
 
 import { API_BASE_URL } from "../config/api.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const C = {
   pageBg: "#F4F7F6",
@@ -169,19 +170,7 @@ export default function AllBlog() {
 
   return (
     <Box sx={{ bgcolor: C.pageBg, minHeight: "100vh", p: 3 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
-      </Box>
+      <AdminPageTitleBar title={title} />
 
       <Card
         sx={{

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Box, Grid, TextField, Typography } from "@mui/material";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 import JoditEditor from "jodit-react";
 
 const C = {
@@ -229,19 +230,7 @@ export default function ManageWebsite() {
         m: { xs: -2, md: -3 },
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
-      </Box>
+      <AdminPageTitleBar title={title} />
 
       <SectionHeading first>Website Setting</SectionHeading>
       <Grid container spacing={3}>

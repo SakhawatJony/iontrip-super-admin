@@ -15,6 +15,55 @@ import { toast } from "react-toastify";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
+const primaryDark = "var(--primary-dark, #024DAF)";
+const primaryDarkHover = "#013A94";
+
+const outlinedFieldSx = {
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: primaryDark,
+  },
+  "& .MuiOutlinedInput-notchedOutline legend": {
+    display: "none",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 0.9,
+    bgcolor: "#fff",
+    height: 35,
+    minHeight: 35
+  },
+  "& .MuiOutlinedInput-input:not(.MuiInputBase-inputMultiline)": {
+    py: 0,
+    height: 35,
+    boxSizing: "border-box",
+  },
+  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: primaryDark,
+  },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: primaryDark,
+    borderWidth: 1,
+  },
+  "& .MuiOutlinedInput-input::placeholder": {
+    color: "#6B7280",
+    opacity: 1,
+  },
+  "& .MuiInputLabel-root": {
+    position: "static",
+    transform: "none",
+    display: "block",
+    mb: 0.5,
+  
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    color: primaryDark,
+    "&.Mui-focused": { color: primaryDark },
+    "&.MuiInputLabel-shrink": {
+      transform: "none",
+      color: primaryDark,
+    },
+  },
+};
+
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -119,77 +168,85 @@ export default function AdminLogin() {
           bgcolor:"white",
         }}
       >
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-          Admin Sign In
+        <Box
+          component="img"
+          src="/src/assets/logo.jpeg"
+          alt="IonTrip"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/vite.svg";
+          }}
+          sx={{
+            display: "block",
+            height: 44,
+            width: "auto",
+            maxWidth: 180,
+            mx: "auto",
+            mb: 2,
+          }}
+        />
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: primaryDark, textAlign: "center" }}>
+          Sign In
         </Typography>
         <TextField
           fullWidth
           label="Admin ID"
-          variant="standard"
+          variant="outlined"
+          placeholder="Enter your admin ID"
           value={adminId}
           onChange={(e) => setAdminId(e.target.value)}
+          InputLabelProps={{ shrink: true }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <MailOutlineIcon sx={{ color: "#9aa0a6", fontSize: "small" }} />
+                <MailOutlineIcon sx={{ color: primaryDark, fontSize: "small" }} />
               </InputAdornment>
             ),
-            disableUnderline: true,
           }}
-          sx={{
-            mb: 3,
-            "& .MuiInputBase-root": {
-              borderBottom: "1px solid #d6d6d6",
-            },
-          }}
+          sx={{ mb: 3, ...outlinedFieldSx }}
         />
         <TextField
           fullWidth
           label="Password"
-          variant="standard"
+          variant="outlined"
+          placeholder="Enter your password"
           type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          InputLabelProps={{ shrink: true }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <LockOutlinedIcon sx={{ color: "#9aa0a6", fontSize: "small" }} />
+                <LockOutlinedIcon sx={{ color: primaryDark, fontSize: "small" }} />
               </InputAdornment>
             ),
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
+                  size="small"
                   onClick={handleClickShowPassword}
                   edge="end"
-                  sx={{ color: "#9aa0a6" }}
+                  sx={{ color: primaryDark, height: 32, width: 32 }}
                 >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
             ),
-            disableUnderline: true,
           }}
-          sx={{
-            mb: 2,
-            "& .MuiInputBase-root": {
-              borderBottom: "1px solid #d6d6d6",
-            },
-          }}
+          sx={{ ...outlinedFieldSx }}
         />
-        <Link href="#" underline="none" sx={{ fontSize: 13, color: "#2b2f3a" }}>
-          Forgot Password ?
-        </Link>
+        
         <Button
           fullWidth
           variant="contained"
           onClick={handleLogin}
           disabled={loading}
           sx={{
-            mt: 4,
+            mt: 2,
             textTransform: "capitalize",
-            py: 1.4,
-            bgcolor: "#1f2a44",
-            "&:hover": { bgcolor: "#182038" },
+            py: 1,
+            bgcolor: primaryDark,
+            "&:hover": { bgcolor: primaryDarkHover },
             "&:disabled": { bgcolor: "#9aa0a6" },
           }}
         >

@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Box, Button, Typography, CircularProgress, Modal, IconButton, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  CircularProgress,
+  Modal,
+  IconButton,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
@@ -10,12 +19,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
-
-const headerTitleSx = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#0F172A",
-};
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const tableColumns = [
   { key: "agentId", label: "Agent ID", width: "120px" },
@@ -32,6 +36,12 @@ const tableColumns = [
 
 const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
 
+/** Status shows Active only when the agent is verified and active; otherwise Inactive. */
+function getAgentEffectiveStatusLabel(agent) {
+  if (agent?.isVerified === true && agent?.isActive === true) return "Active";
+  return "Inactive";
+}
+
 const AllAgent = ({ title = "Agent History" }) => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
@@ -43,6 +53,7 @@ const AllAgent = ({ title = "Agent History" }) => {
   const [error, setError] = useState("");
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [searchBar, setSearchBar] = useState("");
   const [agentIdFilter, setAgentIdFilter] = useState("");
   const [agentEmailFilter, setAgentEmailFilter] = useState("");
   const [agentNameFilter, setAgentNameFilter] = useState("");
@@ -55,6 +66,7 @@ const AllAgent = ({ title = "Agent History" }) => {
   const [markupUpdateLoading, setMarkupUpdateLoading] = useState(false);
 
   const handleFilterChange = (filterType, value) => {
+    setSearchBar("");
     if (filterType === "agentId") {
       setAgentIdFilter(value);
     } else if (filterType === "agentEmail") {
@@ -65,7 +77,16 @@ const AllAgent = ({ title = "Agent History" }) => {
     setPage(1);
   };
 
+  const handleSearchBarChange = (value) => {
+    setSearchBar(value);
+    setAgentIdFilter("");
+    setAgentEmailFilter("");
+    setAgentNameFilter("");
+    setPage(1);
+  };
+
   const handleClearFilters = () => {
+    setSearchBar("");
     setAgentIdFilter("");
     setAgentEmailFilter("");
     setAgentNameFilter("");
@@ -150,15 +171,18 @@ const AllAgent = ({ title = "Agent History" }) => {
       toast.error("Authentication token missing. Please login again.");
       return;
     }
+    if (!selectedAgent.email) {
+      toast.error("Agent email is missing.");
+      return;
+    }
 
     setStatusUpdateLoading(true);
 
     try {
+      const encodedEmail = encodeURIComponent(selectedAgent.email);
       const response = await axios.patch(
-        `${API_BASE_URL}${API_ENDPOINTS.UPDATE_AGENT_STATUS}/${selectedAgent.agentId || selectedAgent.id}`,
-        {
-          isActive: isActive,
-        },
+        `${API_BASE_URL}${API_ENDPOINTS.VERIFY_AGENT}?email=${encodedEmail}`,
+        { isActive },
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -257,16 +281,27 @@ const AllAgent = ({ title = "Agent History" }) => {
         limit: limit.toString(),
       });
 
-      if (agentIdFilter && agentIdFilter.trim()) {
-        params.append("agentId", agentIdFilter.trim());
-      }
+      const q = searchBar.trim();
+      if (q) {
+        if (q.includes("@")) {
+          params.append("email", q);
+        } else if (/IOTA/i.test(q)) {
+          params.append("agentId", q);
+        } else {
+          params.append("name", q);
+        }
+      } else {
+        if (agentIdFilter && agentIdFilter.trim()) {
+          params.append("agentId", agentIdFilter.trim());
+        }
 
-      if (agentEmailFilter && agentEmailFilter.trim()) {
-        params.append("email", agentEmailFilter.trim());
-      }
+        if (agentEmailFilter && agentEmailFilter.trim()) {
+          params.append("email", agentEmailFilter.trim());
+        }
 
-      if (agentNameFilter && agentNameFilter.trim()) {
-        params.append("name", agentNameFilter.trim());
+        if (agentNameFilter && agentNameFilter.trim()) {
+          params.append("name", agentNameFilter.trim());
+        }
       }
 
       const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.ALL_AGENTS}?${params.toString()}`, {
@@ -301,7 +336,7 @@ const AllAgent = ({ title = "Agent History" }) => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, agentIdFilter, agentEmailFilter, agentNameFilter, token]);
+  }, [page, limit, searchBar, agentIdFilter, agentEmailFilter, agentNameFilter, token]);
 
   useEffect(() => {
     if (token) {
@@ -317,7 +352,7 @@ const AllAgent = ({ title = "Agent History" }) => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [agentIdFilter, agentEmailFilter, agentNameFilter, fetchAgents]);
+  }, [agentIdFilter, agentEmailFilter, agentNameFilter, searchBar, fetchAgents]);
 
   const mapAgentToTableRow = (agent) => {
     return {
@@ -328,7 +363,7 @@ const AllAgent = ({ title = "Agent History" }) => {
       mobile: agent?.mobile || "-",
       businessType: agent?.businessType || "-",
       address: agent?.companyAddress || "-",
-      isActive: agent?.isActive ? "Active" : "Inactive",
+      isActive: getAgentEffectiveStatusLabel(agent),
       isVerified: agent?.isVerified ? "Verified" : "Not Verified",
     };
   };
@@ -485,18 +520,9 @@ const AllAgent = ({ title = "Agent History" }) => {
         py: 2,
       }}
     >
-       <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-            p: 1,
-            borderRadius: 1,
-            bgcolor: "var(--primary-dark, #024DAF)",
-          }}
-        >
-          <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
+      <AdminPageTitleBar
+        title={title}
+        action={
           <Button
             variant="outlined"
             onClick={() => fetchAgents()}
@@ -516,7 +542,8 @@ const AllAgent = ({ title = "Agent History" }) => {
           >
             Reload History
           </Button>
-        </Box>
+        }
+      />
       <Box
         sx={{
           backgroundColor: "#FFFFFF",
@@ -635,7 +662,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                   }}
                 />
               </Box>
-              {(agentIdFilter || agentEmailFilter || agentNameFilter) && (
+              {(searchBar || agentIdFilter || agentEmailFilter || agentNameFilter) && (
                 <Button
                   variant="outlined"
                   onClick={handleClearFilters}
@@ -676,6 +703,41 @@ const AllAgent = ({ title = "Agent History" }) => {
             {showFilters ? "Hide Filter" : "More Filter"}
           </Button>
         </Box>
+
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search by Agent ID, email, or name…"
+          value={searchBar}
+          onChange={(e) => handleSearchBarChange(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchOutlinedIcon sx={{ color: "var(--primary-dark, #024DAF)", fontSize: 22 }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            maxWidth: { xs: "100%", sm: 480 },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 1,
+              bgcolor: "#FAFBFC",
+              "& fieldset": {
+                borderColor: "rgba(2, 77, 175, 0.35)",
+              },
+              "&:hover fieldset": {
+                borderColor: "rgba(2, 77, 175, 0.55)",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "var(--primary-dark, #024DAF)",
+              },
+            },
+            "& .MuiInputBase-input": {
+              fontSize: 14,
+              py: 1.1,
+            },
+          }}
+        />
 
         <Box
           sx={{
@@ -964,7 +1026,8 @@ const AllAgent = ({ title = "Agent History" }) => {
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Status</Typography>
                     {(() => {
-                      const statusColors = getStatusColors(selectedAgent.isActive ? "Active" : "Inactive");
+                      const statusLabel = getAgentEffectiveStatusLabel(selectedAgent);
+                      const statusColors = getStatusColors(statusLabel);
                       return (
                         <Typography
                           sx={{
@@ -978,7 +1041,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                             width: "fit-content",
                           }}
                         >
-                          {selectedAgent.isActive ? "Active" : "Inactive"}
+                          {statusLabel}
                         </Typography>
                       );
                     })()}

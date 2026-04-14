@@ -26,7 +26,7 @@ import CardTravelIcon from "@mui/icons-material/CardTravel";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import HotelIcon from "@mui/icons-material/Hotel";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import companyLogo from "../assets/logo.jpg";
+const companyLogo = "/src/assets/logo.jpeg";
 
 const MENU_TEXT_COLOR = "#4B5563";
 const MENU_ICON_COLOR = "#6B7280";

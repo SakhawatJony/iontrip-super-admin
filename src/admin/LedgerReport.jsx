@@ -12,12 +12,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
-
-const headerTitleSx = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#0F172A",
-};
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const LedgerReport = ({ title = "Transaction History" }) => {
   const navigate = useNavigate();
@@ -284,38 +279,30 @@ const LedgerReport = ({ title = "Transaction History" }) => {
         py: 4,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 18, fontWeight: 500, color: "#FFFFFF" }}>{title}</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
-          onClick={handleToggleFilters}
-          sx={{
-            textTransform: "none",
-            fontSize: 12,
-            fontWeight: 700,
-            bgcolor: "#FFFFFF",
-            color: "var(--primary-dark, #024DAF)",
-            borderColor: "rgba(2, 77, 175, 0.35)",
-            "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
-            height: 34,
-            px: 1.8,
-            borderRadius: 1,
-          }}
-        >
-          {showFilters ? "Hide Filter" : "More Filter"}
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title={title}
+        action={
+          <Button
+            variant="outlined"
+            startIcon={<TuneIcon sx={{ fontSize: 16 }} />}
+            onClick={handleToggleFilters}
+            sx={{
+              textTransform: "none",
+              fontSize: 12,
+              fontWeight: 700,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #024DAF)",
+              borderColor: "rgba(2, 77, 175, 0.35)",
+              "&:hover": { bgcolor: "#EAEFF5", borderColor: "rgba(2, 77, 175, 0.45)" },
+              height: 34,
+              px: 1.8,
+              borderRadius: 1,
+            }}
+          >
+            {showFilters ? "Hide Filter" : "More Filter"}
+          </Button>
+        }
+      />
 
       <Box
         sx={{

@@ -20,6 +20,7 @@ import { ToastContainer, toast } from "react-toastify";
 
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../context/AuthContext.jsx";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 const generatePermalink = (title) => {
   return title
@@ -276,6 +277,7 @@ export default function AddBlog() {
         m: { xs: -2, md: -3 },
       }}
     >
+      <AdminPageTitleBar title={isEditing ? "Edit Blog" : "Add Blog"} />
       <Box sx={{ mb: 3,bgcolor:"#ffffff" }}>
         <Tabs
           value={tabValue}

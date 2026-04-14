@@ -45,7 +45,7 @@ export default function App() {
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {!hideChrome && <Navbar />}
+      
       <Box sx={{ flexGrow: 1 }}>
         <Routes>
           <Route path="/" element={<AdminLogin />} />
@@ -116,7 +116,7 @@ export default function App() {
           </Route>
         </Routes>
       </Box>
-      {!hideChrome && <Footer />}
+   
     </Box>
   );
 }

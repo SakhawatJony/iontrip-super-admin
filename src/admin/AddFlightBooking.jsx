@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Box, Button, Grid, MenuItem, Paper, TextField, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 export default function AddFlightBooking() {
   const navigate = useNavigate();
@@ -77,33 +78,25 @@ export default function AddFlightBooking() {
 
   return (
     <Box sx={{ bgcolor: C.pageBg, minHeight: "100vh", p: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 2,
-          borderRadius: 2,
-          bgcolor: C.primaryDark,
-        }}
-      >
-        <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF" }}>Add Flight</Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/dashboard/flightbookings/bookinghistory")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 800,
-            bgcolor: "#FFFFFF",
-            color: C.primaryDark,
-            "&:hover": { bgcolor: "#EAEFF5" },
-          }}
-          startIcon={<AddIcon />}
-        >
-          Booking History
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title="Add Flight"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/flightbookings/bookinghistory")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 800,
+              bgcolor: "#FFFFFF",
+              color: C.primaryDark,
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            startIcon={<AddIcon />}
+          >
+            Booking History
+          </Button>
+        }
+      />
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 2, borderRadius: 2, bgcolor: C.cardBg }}>
         <Typography sx={{ fontWeight: 700, color: C.mutedTitle, mb: 2 }}>Basic Information</Typography>

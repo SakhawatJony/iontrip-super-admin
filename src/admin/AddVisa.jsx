@@ -4,6 +4,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 import { toast } from "react-toastify";
 
 export default function AddVisa() {
@@ -139,33 +140,25 @@ export default function AddVisa() {
 
   return (
     <Box sx={{ bgcolor: C.pageBg, minHeight: "100vh", p: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: C.primaryDark,
-        }}
-      >
-        <Typography sx={{ fontSize: 20, fontWeight: 500, color: "#FFFFFF" }}>Add Visa</Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/dashboard/visa/allvisa")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 500,
-            bgcolor: "#FFFFFF",
-            color: C.primaryDark,
-            "&:hover": { bgcolor: "#EAEFF5" },
-          }}
-          endIcon={<RefreshIcon />}
-        >
-          Visa History
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title="Add Visa"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/visa/allvisa")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 500,
+              bgcolor: "#FFFFFF",
+              color: C.primaryDark,
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            endIcon={<RefreshIcon />}
+          >
+            Visa History
+          </Button>
+        }
+      />
 
       <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, borderRadius: 1, bgcolor: C.cardBg }}>
         {/* Basic Information */}

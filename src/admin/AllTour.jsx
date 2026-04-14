@@ -4,6 +4,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useNavigate } from "react-router-dom";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
 export default function AllTour() {
   const navigate = useNavigate();
@@ -70,33 +71,25 @@ export default function AllTour() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "var(--primary-dark, #024DAF)",
-        }}
-      >
-        <Typography sx={{ fontSize: 20, fontWeight: 500, color: "#FFFFFF" }}>Tour History</Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/dashboard/tour/addtour")}
-          sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            bgcolor: "#FFFFFF",
-            color: "var(--primary-dark, #0F2F56)",
-            "&:hover": { bgcolor: "#EAEFF5" },
-          }}
-          startIcon={<AddCircleOutlineIcon />}
-        >
-          Add Tour
-        </Button>
-      </Box>
+      <AdminPageTitleBar
+        title="Tour History"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/tour/addtour")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #0F2F56)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            startIcon={<AddCircleOutlineIcon />}
+          >
+            Add Tour
+          </Button>
+        }
+      />
 
       <Box
         sx={{

@@ -1,5 +1,5 @@
 // API Base URL — set `VITE_API_BASE_URL` in `env/.env` (see vite.config.js `envDir`).
-const DEFAULT_API_BASE = "https://iontrip-backend-production-2d3b.up.railway.app";
+const DEFAULT_API_BASE = "https://api.iontrip.com";
 
 function normalizeApiBase(url) {
   if (!url || typeof url !== "string") return "";
