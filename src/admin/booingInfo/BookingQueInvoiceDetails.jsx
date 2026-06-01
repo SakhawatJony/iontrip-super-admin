@@ -1,5 +1,9 @@
 import React from "react";
 import { Box, Typography, Divider, Table, TableBody, TableRow, TableCell } from "@mui/material";
+import {
+  resolveBookingBackSegments,
+  resolveBookingGoSegments,
+} from "../flightItineraryUtils";
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -47,12 +51,14 @@ const BookingQueInvoiceDetails = ({
   if (!data) return null;
 
   const travellers = data?.travellers || [];
-  const segments = data?.segments || {};
-  const goSegments = segments?.go || [];
-  const backSegments = segments?.back || [];
   const pricebreakdown = data?.pricebreakdown || [];
   const currency = data?.farecurrency || "MYR";
   const grandTotal = parseFloat(data?.netPrice || data?.clientFare || 0);
+
+  const allSegments = [
+    ...resolveBookingGoSegments(data),
+    ...resolveBookingBackSegments(data),
+  ];
 
   const totalBaseFare = (pricebreakdown || []).reduce(
     (sum, item) => sum + parseFloat(item.BaseFare || 0) * parseFloat(item.PaxCount || 1),
@@ -66,8 +72,6 @@ const BookingQueInvoiceDetails = ({
     (sum, item) => sum + parseFloat(item.Discount || 0) * parseFloat(item.PaxCount || 1),
     0
   );
-
-  const allSegments = [...goSegments, ...backSegments];
 
   return (
     <Box sx={{ bgcolor: "#fff", borderRadius: 1, p: 2 }}>

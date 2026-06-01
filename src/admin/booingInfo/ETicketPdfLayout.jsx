@@ -8,6 +8,10 @@ import LuggageIcon from "@mui/icons-material/Luggage";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FlightIcon from "@mui/icons-material/Flight";
+import {
+  resolveBookingBackSegments,
+  resolveBookingGoSegments,
+} from "../flightItineraryUtils";
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -67,10 +71,10 @@ const ETicketPdfLayout = ({
 }) => {
   if (!data) return null;
 
-  const segments = data?.segments || {};
-  const goSegments = segments?.go || [];
-  const backSegments = segments?.back || [];
-  const allSegments = [...goSegments, ...backSegments];
+  const allSegments = [
+    ...resolveBookingGoSegments(data),
+    ...resolveBookingBackSegments(data),
+  ];
   const travellers = data?.travellers || [];
   const pricebreakdown = data?.pricebreakdown || [];
   const currency = data?.farecurrency || "BDT";

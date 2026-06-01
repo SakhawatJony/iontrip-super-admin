@@ -28,4 +28,12 @@ export const API_ENDPOINTS = {
   DELETE_BANK: "/bank-info",
   TRANSACTION_LIST: "/transection/admin/list",
   VENDOR_TICKET: "/ticket-actions/VendorTicket",
+  CREATE_VISA: "/visa/createVisa",
+  FIND_ALL_VISA: "/visa/findAllVisa",
+  BLOG_CREATE: "/blogs/admin/create",
+  BLOG_UPDATE: "/blogs/admin/update",
+  BLOG_ALL: "/blogs/admin/allBlogs",
+  BLOG_DELETE: "/blogs/admin/delete",
+  BLOG_CATEGORIES: "/blogs/admin/categories",
+  BLOG_TAGS: "/blogs/admin/tags",
 };

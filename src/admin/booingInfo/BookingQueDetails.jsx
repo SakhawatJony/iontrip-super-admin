@@ -9,15 +9,20 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useLocation, useNavigate } from "react-router-dom";
+import { BQ, bqSidebarBtnSx } from "./bookingQueTheme.js";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CancelIcon from "@mui/icons-material/Cancel";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import TimelineIcon from "@mui/icons-material/Timeline";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_BASE_URL } from "../../config/api.js";
@@ -29,7 +34,10 @@ import BookingQuePassengerList from "./BookingQuePassengerList";
 import BookingQueFareDetails from "./BookingQueFareDetails";
 import BookingQueSupport from "./BookingQueSupport";
 import BookingQueSessionTime from "./BookingQueSessionTime";
-import AdminPageTitleBar from "../AdminPageTitleBar.jsx";
+import { unwrapBookingResponse } from "../flightItineraryUtils.js";
+import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import { resolveBookingAgentEmail, formatBqNumber } from "./bookingQueUtils.js";
 
 const BookingQueDetails = () => {
   const location = useLocation();
@@ -84,7 +92,7 @@ const BookingQueDetails = () => {
           },
         });
 
-        setBookingData(response?.data || response?.data?.data || null);
+        setBookingData(unwrapBookingResponse(response));
       } catch (err) {
         const apiMessage =
           err?.response?.data?.message ||
@@ -131,12 +139,109 @@ const BookingQueDetails = () => {
     fetchTimeline();
   }, [timelineModalOpen, bookingId, agentEmail, superadminToken, baseUrl]);
 
-  // Fetch wallet balance when Issue with Balance dialog opens
+  const bookingAgentEmail = resolveBookingAgentEmail(bookingData, agentEmail);
 
+  useEffect(() => {
+    if (!issueBalanceDialogOpen || !bookingAgentEmail || !superadminToken) return;
 
+    const fetchWallet = async () => {
+      setWalletBalanceLoading(true);
+      setWalletBalance(null);
+      try {
+        const res = await axios.get(
+          `${baseUrl}/wallet/getWalletBalance?email=${encodeURIComponent(bookingAgentEmail)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${superadminToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        const bal =
+          res?.data?.data?.balance ??
+          res?.data?.data?.walletBalance ??
+          res?.data?.balance ??
+          res?.data?.walletBalance ??
+          null;
+        setWalletBalance(bal);
+      } catch {
+        setWalletBalance(null);
+      } finally {
+        setWalletBalanceLoading(false);
+      }
+    };
+
+    fetchWallet();
+  }, [issueBalanceDialogOpen, bookingAgentEmail, superadminToken, baseUrl]);
+
+  const handlePayWithWallet = async () => {
+    if (!superadminToken || !bookingId || !bookingAgentEmail) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Missing booking or agent details.",
+        confirmButtonColor: BQ.actionBlue,
+      });
+      return;
+    }
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Issue with Balance",
+      text: "Confirm payment from agent wallet to issue this booking?",
+      showCancelButton: true,
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: BQ.navy,
+      cancelButtonColor: "#6B7280",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+
+    setPayWithWalletLoading(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/flight/payWithWallet`,
+        { bookingId, email: bookingAgentEmail },
+        {
+          headers: {
+            Authorization: `Bearer ${superadminToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      const successMessage =
+        response?.data?.message ?? response?.data?.data?.message ?? "Payment successful.";
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: successMessage,
+        confirmButtonColor: BQ.actionBlue,
+      });
+      setIssueBalanceDialogOpen(false);
+      const refetchRes = await axios.get(`${baseUrl}/booking/admin/${bookingId}`, {
+        headers: { Authorization: `Bearer ${superadminToken}`, "Content-Type": "application/json" },
+      });
+      setBookingData(unwrapBookingResponse(refetchRes));
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to issue with balance.";
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage,
+        confirmButtonColor: BQ.actionBlue,
+      });
+    } finally {
+      setPayWithWalletLoading(false);
+    }
+  };
 
   const handleCancelBooking = async () => {
-    if (!superadminToken || !agentEmail || !bookingId) {
+    const cancelEmail = resolveBookingAgentEmail(bookingData, agentEmail);
+    if (!superadminToken || !cancelEmail || !bookingId) {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -160,7 +265,7 @@ const BookingQueDetails = () => {
     setCancelBookingLoading(true);
     try {
       const response = await axios.get(
-        `${baseUrl}/flight/CancelBooking?bookingId=${encodeURIComponent(bookingId)}&email=${encodeURIComponent(agentEmail)}`,
+        `${baseUrl}/flight/CancelBooking?bookingId=${encodeURIComponent(bookingId)}&email=${encodeURIComponent(cancelEmail)}`,
         {
           headers: {
             Authorization: `Bearer ${superadminToken}`,
@@ -182,7 +287,7 @@ const BookingQueDetails = () => {
         `${baseUrl}/booking/admin/${bookingId}`,
         { headers: { Authorization: `Bearer ${superadminToken}`, "Content-Type": "application/json" } }
       );
-      setBookingData(refetchRes?.data || refetchRes?.data?.data || null);
+      setBookingData(unwrapBookingResponse(refetchRes));
     } catch (err) {
       const errorMessage =
         err?.response?.data?.message ??
@@ -318,72 +423,139 @@ const BookingQueDetails = () => {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <CircularProgress sx={{ color: "#0F2F56" }} />
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: BQ.pageBg,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress sx={{ color: BQ.actionBlue }} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Typography sx={{ fontSize: 14, color: "#d32f2f" }}>{error}</Typography>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: BQ.pageBg,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+          px: 2,
+        }}
+      >
+        <Typography sx={{ fontSize: 14, color: BQ.expired }}>{error}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/dashboard/flightbookings/bookinghistory")}
+          sx={{ textTransform: "none", borderColor: BQ.navy, color: BQ.navy }}
+        >
+          Back to bookings
+        </Button>
       </Box>
     );
   }
 
   if (!bookingData) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Typography sx={{ fontSize: 14, color: "#6B7280" }}>No booking data found</Typography>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: BQ.pageBg,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography sx={{ fontSize: 14, color: BQ.muted }}>No booking data found</Typography>
       </Box>
     );
   }
 
-  return (
-    <Box sx={{ minHeight: "100vh", px: 4, py: 4 }}>
-      <AdminPageTitleBar title="Booking Queue Details" />
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={9}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <BookingQueInfoSection data={bookingData} />
-            <BookingQueDetailsCard data={bookingData} />
-            <BookingQuePassengerList data={bookingData} />
-          </Box>
-        </Grid>
+  const rawStatusNorm = (bookingData?.status || "").toUpperCase().replace(/\s+/g, "");
+  const isHold = rawStatusNorm === "HOLD" || rawStatusNorm === "BOOKED";
+  const isIssueInProcess = rawStatusNorm === "ISSUEINPROCESS";
 
-        <Grid item xs={12} lg={3}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Timeline & Voucher Download - always visible */}
-            <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
+  return (
+    <Box sx={{ minHeight: "100vh", bgcolor: BQ.pageBg, pb: 4 }}>
+      <Box
+        sx={{
+          bgcolor: BQ.navBar,
+          px: { xs: 1.5, md: 2 },
+          py: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+        <IconButton
+          onClick={() => navigate("/dashboard/flightbookings/bookinghistory")}
+          sx={{ color: "#fff", p: 0.75 }}
+          aria-label="Back"
+        >
+          <ArrowBackIcon sx={{ fontSize: 20 }} />
+        </IconButton>
+        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+          Booking Queue Details
+        </Typography>
+      </Box>
+
+      <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 1.25, md: 1.75 }, pt: 1.5 }}>
+        <Grid container spacing={1.5}>
+          <Grid item xs={12} lg={8}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <BookingQueInfoSection data={bookingData} />
+              <BookingQueDetailsCard data={bookingData} />
+              <BookingQuePassengerList data={bookingData} />
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} lg={4}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.25,
+                position: { lg: "sticky" },
+                top: { lg: 12 },
+              }}
+            >
               <Button
-                startIcon={<TimelineIcon />}
+                fullWidth
+                variant="contained"
+                startIcon={<ShowChartOutlinedIcon />}
                 onClick={() => setTimelineModalOpen(true)}
                 sx={{
-                  flex: 1,
-                  bgcolor: "#2C4A57",
-                  color: "white",
-                  textTransform: "capitalize",
-                  borderRadius: "6px",
-                  "&:hover": { bgcolor: "#243d47" },
+                  ...bqSidebarBtnSx,
+                  bgcolor: BQ.navy,
+                  color: "#fff",
+                  "&:hover": { bgcolor: BQ.navyDark },
                 }}
               >
-                Timeline
+                Booking Timeline
               </Button>
               <Button
+                fullWidth
+                variant="contained"
                 startIcon={<FileDownloadIcon />}
                 endIcon={<KeyboardArrowDownIcon />}
                 onClick={(e) => setVoucherMenuAnchor(e.currentTarget)}
                 sx={{
-                  flex: 1,
-                  bgcolor: "#2CCEE4",
-                  color: "white",
-                  textTransform: "capitalize",
-                  borderRadius: "8px",
-                  "&:hover": { bgcolor: "#25b8cc" },
+                  ...bqSidebarBtnSx,
+                  bgcolor: BQ.actionBlue,
+                  color: "#fff",
+                  "&:hover": { bgcolor: BQ.actionBlueHover },
                 }}
               >
-                Voucher Download
+                Download Voucher
               </Button>
               <Menu
                 anchorEl={voucherMenuAnchor}
@@ -424,66 +596,106 @@ const BookingQueDetails = () => {
                   );
                 })()}
               </Menu>
+              {isHold ? (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AccountBalanceWalletIcon />}
+                  onClick={() => setIssueBalanceDialogOpen(true)}
+                  sx={{
+                    ...bqSidebarBtnSx,
+                    bgcolor: BQ.navy,
+                    color: "#fff",
+                    "&:hover": { bgcolor: BQ.navyDark },
+                  }}
+                >
+                  Issue with Balance
+                </Button>
+              ) : null}
+              {!isHold && !isIssueInProcess ? (
+                <>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<MoneyOffIcon />}
+                    onClick={() =>
+                      navigate("/dashboard/flightbookings/refundshistory", {
+                        state: { bookingId: bookingData?.bookingId || bookingId },
+                      })
+                    }
+                    sx={{
+                      ...bqSidebarBtnSx,
+                      bgcolor: BQ.refundBtn,
+                      color: "#fff",
+                      "&:hover": { bgcolor: BQ.refundBtnHover },
+                    }}
+                  >
+                    Refund
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<AutorenewIcon />}
+                    onClick={() =>
+                      navigate("/dashboard/flightbookings/reissuehistory", {
+                        state: { bookingId: bookingData?.bookingId || bookingId },
+                      })
+                    }
+                    sx={{
+                      ...bqSidebarBtnSx,
+                      bgcolor: BQ.navy,
+                      color: "#fff",
+                      "&:hover": { bgcolor: BQ.navyDark },
+                    }}
+                  >
+                    Reissue
+                  </Button>
+                </>
+              ) : null}
+              {isHold ? (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelBooking}
+                  disabled={cancelBookingLoading}
+                  sx={{
+                    ...bqSidebarBtnSx,
+                    bgcolor: BQ.cancelRed,
+                    color: "#fff",
+                    "&:hover": { bgcolor: BQ.cancelRedHover },
+                  }}
+                >
+                  {cancelBookingLoading ? "Cancelling..." : "Cancel Booking"}
+                </Button>
+              ) : null}
+              {isIssueInProcess ? (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<PaymentIcon />}
+                  onClick={() =>
+                    navigate("/dashboard/maketicketed", {
+                      state: { bookingData, bookingId },
+                    })
+                  }
+                  sx={{
+                    ...bqSidebarBtnSx,
+                    bgcolor: BQ.actionBlue,
+                    color: "#fff",
+                    "&:hover": { bgcolor: BQ.actionBlueHover },
+                  }}
+                >
+                  Make ticketed
+                </Button>
+              ) : null}
+              <BookingQueFareDetails data={bookingData} />
+              <BookingQueSupport />
+              <BookingQueSessionTime data={bookingData} />
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {(() => {
-                const rawStatus = (bookingData?.status || "").toUpperCase().replace(/\s+/g, "");
-                const isHold = rawStatus === "HOLD" || rawStatus === "BOOKED";
-                const isIssueInProcess = rawStatus === "ISSUEINPROCESS";
-                const buttonRowSx = { display: "flex", gap: 1, flexDirection: "column" };
-                if (isHold) {
-                  return (
-                    <Box sx={buttonRowSx}>
-                      <Button
-                        startIcon={<CancelIcon />}
-                        onClick={handleCancelBooking}
-                        disabled={cancelBookingLoading}
-                        sx={{
-                          flex: 1,
-                          bgcolor: "red",
-                          color: "white",
-                          textTransform: "capitalize",
-                          "&:hover": { bgcolor: "#c62828" },
-                        }}
-                      >
-                        {cancelBookingLoading ? "Cancelling..." : "Cancel"}
-                      </Button>
-                    </Box>
-                  );
-                }
-                if (isIssueInProcess) {
-                  return (
-                    <Box sx={buttonRowSx}>
-                      <Button
-                        startIcon={<PaymentIcon />}
-                        onClick={() =>
-                          navigate("/dashboard/maketicketed", {
-                            state: { bookingData, bookingId },
-                          })
-                        }
-                        sx={{
-                          flex: 1,
-                          bgcolor: "var(--primary-color)",
-                          color: "white",
-                          textTransform: "capitalize",
-                          "&:hover": { bgcolor: "var(--primary-color)", opacity: 0.9 },
-                        }}
-                      >
-                        Make Ticketed
-                      </Button>
-                    </Box>
-                  );
-                }
-
-              })()}
-            </Box>
-            <BookingQueFareDetails data={bookingData} />
-            <BookingQueSupport />
-            <BookingQueSessionTime data={bookingData} />
-
-          </Box>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
 
       {/* Booking Timeline Modal */}
       <Modal
@@ -493,46 +705,53 @@ const BookingQueDetails = () => {
       >
         <Box
           sx={{
-            bgcolor: "#2C4A57",
-            borderRadius: "12px",
-            maxWidth: 520,
+            bgcolor: BQ.card,
+            borderRadius: BQ.radius,
+            maxWidth: 560,
             width: "100%",
             maxHeight: "90vh",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            boxShadow: 24,
+            boxShadow: BQ.shadow,
+            border: `1px solid ${BQ.border}`,
           }}
         >
-          {/* Header */}
-          <Box sx={{ position: "relative", px: 3, pt: 3, pb: 1 }}>
+          <Box
+            sx={{
+              position: "relative",
+              px: 3,
+              pt: 2.5,
+              pb: 2,
+              bgcolor: BQ.navy,
+            }}
+          >
             <IconButton
               onClick={() => setTimelineModalOpen(false)}
               sx={{
                 position: "absolute",
                 right: 8,
                 top: 8,
-                color: "white",
-                bgcolor: "rgba(0,0,0,0.2)",
-                "&:hover": { bgcolor: "rgba(0,0,0,0.35)" },
+                color: "#fff",
+                bgcolor: "rgba(255,255,255,0.15)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
               }}
             >
               <CloseIcon />
             </IconButton>
-            <Typography sx={{ fontSize: 22, fontWeight: 700, color: "white" }}>
-              Booking Timeline
+            <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>
+              Booking timeline
             </Typography>
-            <Typography sx={{ fontSize: 14, color: "rgba(255,255,255,0.9)", mt: 0.5 }}>
-              Airlines PNR: {bookingData?.airlinePNR ?? bookingData?.gdsPNR ?? "N/A"}, PNR :{" "}
-              {bookingData?.gdsPNR ?? "N/A"}
+            <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.9)", mt: 0.5 }}>
+              PNR: {bookingData?.gdsPNR ?? "N/A"} · Airlines PNR:{" "}
+              {bookingData?.airlinePNR ?? bookingData?.gdsPNR ?? "N/A"}
             </Typography>
           </Box>
 
-          {/* Timeline list - all dynamic from API / bookingData */}
-          <Box sx={{ px: 3, pb: 3, pt: 1, overflowY: "auto" }}>
+          <Box sx={{ px: 3, pb: 3, pt: 2, overflowY: "auto" }}>
             {timelineLoading ? (
               <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
-                <CircularProgress sx={{ color: "rgba(255,255,255,0.8)" }} size={32} />
+                <CircularProgress sx={{ color: BQ.navy }} size={32} />
               </Box>
             ) : (
               timelineEvents.map((event, index) => (
@@ -544,13 +763,11 @@ const BookingQueDetails = () => {
                     pb: index < timelineEvents.length - 1 ? 2.5 : 0,
                   }}
                 >
-                  {/* Left: date/time */}
-                  <Box sx={{ width: 140, flexShrink: 0, pr: 2 }}>
-                    <Typography sx={{ fontSize: 13, color: "white" }}>
+                  <Box sx={{ width: 130, flexShrink: 0, pr: 1.5 }}>
+                    <Typography sx={{ fontSize: 12, color: BQ.muted, fontWeight: 500 }}>
                       {formatTimelineDate(event.dateTime)}
                     </Typography>
                   </Box>
-                  {/* Vertical line + dot */}
                   <Box
                     sx={{
                       width: 20,
@@ -565,8 +782,10 @@ const BookingQueDetails = () => {
                         width: 10,
                         height: 10,
                         borderRadius: "50%",
-                        bgcolor: "#e53935",
+                        bgcolor: BQ.navy,
                         flexShrink: 0,
+                        border: `2px solid ${BQ.card}`,
+                        boxShadow: `0 0 0 2px ${BQ.navy}40`,
                       }}
                     />
                     {index < timelineEvents.length - 1 && (
@@ -575,23 +794,27 @@ const BookingQueDetails = () => {
                           width: 2,
                           flex: 1,
                           minHeight: 40,
-                          bgcolor: "rgba(255,255,255,0.5)",
+                          bgcolor: BQ.border,
                           mt: 0.5,
                         }}
                       />
                     )}
                   </Box>
-                  {/* Right: status, agent, remarks */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ flex: 1, minWidth: 0, pl: 1 }}>
                     <Typography
-                      sx={{ fontSize: 14, fontWeight: 700, color: "white", textTransform: "uppercase" }}
+                      sx={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: BQ.navy,
+                        textTransform: "uppercase",
+                      }}
                     >
                       {event.status}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.95)", mt: 0.25 }}>
+                    <Typography sx={{ fontSize: 12, color: BQ.text, mt: 0.35 }}>
                       Agent: {event.agent}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.9)" }}>
+                    <Typography sx={{ fontSize: 12, color: BQ.muted }}>
                       Remarks: {event.remarks}
                     </Typography>
                   </Box>
@@ -603,6 +826,63 @@ const BookingQueDetails = () => {
       </Modal>
 
 
+
+      <Dialog
+        open={issueBalanceDialogOpen}
+        onClose={() => !payWithWalletLoading && setIssueBalanceDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: BQ.radius, overflow: "hidden" } }}
+      >
+        <DialogTitle sx={{ bgcolor: BQ.navy, color: "#fff", fontSize: 16, fontWeight: 700, py: 1.5 }}>
+          Issue with Balance
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5, pb: 1 }}>
+          <Typography sx={{ fontSize: 12, color: BQ.muted, mb: 1.5 }}>
+            Agent: {bookingAgentEmail || "N/A"}
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography sx={{ fontSize: 12, color: BQ.muted }}>Booking amount</Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: BQ.navy }}>
+              {bookingData?.farecurrency || "BDT"}{" "}
+              {formatBqNumber(bookingData?.netPrice ?? bookingData?.clientFare ?? 0)}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography sx={{ fontSize: 12, color: BQ.muted }}>Wallet balance</Typography>
+            {walletBalanceLoading ? (
+              <CircularProgress size={18} sx={{ color: BQ.actionBlue }} />
+            ) : (
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: BQ.actionBlue }}>
+                {walletBalance != null
+                  ? `${bookingData?.farecurrency || "BDT"} ${formatBqNumber(walletBalance)}`
+                  : "—"}
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setIssueBalanceDialogOpen(false)}
+            disabled={payWithWalletLoading}
+            sx={{ textTransform: "none", color: BQ.muted }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handlePayWithWallet}
+            disabled={payWithWalletLoading}
+            sx={{
+              textTransform: "none",
+              bgcolor: BQ.navy,
+              "&:hover": { bgcolor: BQ.navyDark },
+            }}
+          >
+            {payWithWalletLoading ? "Processing..." : "Confirm payment"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Invoice Details Modal (E-Ticket / Agent Invoice / Customer Invoice) */}
       <Modal

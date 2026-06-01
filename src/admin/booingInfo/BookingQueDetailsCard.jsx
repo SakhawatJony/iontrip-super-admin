@@ -1,179 +1,176 @@
 import React, { useState } from "react";
 import { Box, Divider, Typography, Tab, Tabs } from "@mui/material";
 import FlightIcon from "@mui/icons-material/Flight";
+import FlightOutlinedIcon from "@mui/icons-material/FlightOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { BQ, bqCardSx } from "./bookingQueTheme.js";
+import { BqAccentTitle, BqTagChip } from "./bookingQueUi.jsx";
+import {
+  formatDisplayDuration,
+  isRoundTripBooking,
+  resolveBookingBackSegments,
+  resolveBookingGoSegments,
+  resolveSierraLegSummary,
+} from "../flightItineraryUtils";
 
 const BookingQueDetailsCard = ({ data }) => {
   const [tab, setTab] = useState(0);
   const [logoErrors, setLogoErrors] = useState({});
-  
-  // Format time from ISO string to HH:MM
+
   const formatTime = (dateString) => {
     if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      return `${hours}:${minutes}`;
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
     } catch {
       return "N/A";
     }
   };
 
-  // Format date from ISO string to "DD MMM, YYYY"
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "";
     try {
       const date = new Date(dateString);
-      const day = date.getDate();
-      const month = date.toLocaleString("en-US", { month: "short" });
-      const year = date.getFullYear();
-      return `${day} ${month}, ${year}`;
+      return date.toLocaleString("en-US", { day: "numeric", month: "short", year: "numeric" });
     } catch {
-      return "N/A";
+      return "";
     }
   };
 
-  // Build segments array from API data
   const buildSegments = (segmentsArray) => {
-    const processedSegments = [];
-    
-    segmentsArray.forEach((segment, index) => {
-      const departTime = formatTime(segment.departureTime);
-      const departDate = formatDate(segment.departureTime);
-      const arriveTime = formatTime(segment.arrivalTime);
-      const arriveDate = formatDate(segment.arrivalTime);
-      const route = `${segment.departureAirport || segment.departure || "N/A"} to ${segment.arrivalAirport || segment.arrival || "N/A"}`;
-      const airline = `${segment.marketingcareerName || segment.marketingcareer || "N/A"} - ${segment.marketingcareer || ""} ${segment.marketingflight || ""}`;
-      const cabin = `${segment.class || data?.cabinClass || "ECONOMY"}`;
-      const baggage = segment.bags || "N/A";
-      const duration = segment.flightduration || "N/A";
-      const layover = segment.transit && Object.keys(segment.transit).length > 0 
-        ? `Stops ${Object.keys(segment.transit).length} / Layover ${segment.transit[Object.keys(segment.transit)[0]] || "N/A"}`
-        : "Non-stop";
-      const carrierCode = segment.marketingcareer || segment.carrierCode || "";
+    return segmentsArray.map((segment, index) => {
+      const dep = segment.departureAirport || segment.departure || "N/A";
+      const arr = segment.arrivalAirport || segment.arrival || "N/A";
+      const depName = segment.departureAirportName || segment.departureName || dep;
+      const arrName = segment.arrivalAirportName || segment.arrivalName || arr;
+      const carrierCode = segment.marketingcareer || segment.marketingCarrier || "";
+      const airline =
+        `${segment.marketingcareerName || segment.marketingCarrierName || ""} · ${carrierCode} ${segment.marketingflight || segment.marketingFlight || ""}`.trim();
+      const cabin = segment.class || segment.cabin || data?.cabinClass || "ECONOMY";
+      const baggage = segment.bags || "—";
+      const cabinBag = segment.cabinBag || segment.cabinbag || "7KG";
+      const duration = formatDisplayDuration(segment.flightduration || segment.duration) || "—";
 
-      processedSegments.push({
-        departTime,
-        departDate,
-        arriveTime,
-        arriveDate,
-        route,
+      return {
+        departTime: formatTime(segment.departureTime),
+        departDate: formatDate(segment.departureTime),
+        arriveTime: formatTime(segment.arrivalTime),
+        arriveDate: formatDate(segment.arrivalTime),
+        dep,
+        arr,
+        depName,
+        arrName,
         airline,
-        cabin,
+        cabin: String(cabin).toUpperCase(),
         baggage,
+        cabinBag,
         duration,
-        layover,
         carrierCode,
         originalIndex: index,
-      });
+      };
     });
-
-    return processedSegments;
   };
 
-  const goSegments = data?.segments?.go || [];
-  const backSegments = data?.segments?.back || [];
-  const processedGoSegments = buildSegments(goSegments);
-  const processedBackSegments = buildSegments(backSegments);
-  
-  // Get departure and arrival airports for header
-  const goDeparture = data?.godeparture || data?.segments?.go?.[0]?.departure || "N/A";
-  const goArrival = data?.goarrival || data?.segments?.go?.[data?.segments?.go?.length - 1]?.arrival || "N/A";
-  const backDeparture = data?.backdeparture || data?.segments?.back?.[0]?.departure;
-  const backArrival = data?.backarrival || data?.segments?.back?.[data?.segments?.back?.length - 1]?.arrival;
-  
-  const isRoundTrip = data?.triptype === "roundtrip" || (backDeparture && backArrival);
-  const goRoute = `${goDeparture} → ${goArrival}`;
-  const backRoute = backDeparture && backArrival ? `${backDeparture} → ${backArrival}` : "";
+  const goSegments = resolveBookingGoSegments(data);
+  const backSegments = resolveBookingBackSegments(data);
+  const processedGo = buildSegments(goSegments);
+  const processedBack = buildSegments(backSegments);
 
-  const currentSegments = tab === 0 ? processedGoSegments : processedBackSegments;
+  const goSummary = resolveSierraLegSummary(data, 1);
+  const backSummary = resolveSierraLegSummary(data, 2);
+  const firstGo = goSegments[0] || {};
+  const lastGo = goSegments[goSegments.length - 1] || firstGo;
+  const firstBack = backSegments[0] || {};
+  const lastBack = backSegments[backSegments.length - 1] || firstBack;
+
+  const goDep = data?.godeparture || firstGo?.departure || goSummary?.departure || "—";
+  const goArr = data?.goarrival || lastGo?.arrival || goSummary?.arrival || "—";
+  const backDep = data?.backdeparture || firstBack?.departure || backSummary?.departure;
+  const backArr = data?.backarrival || lastBack?.arrival || backSummary?.arrival;
+
+  const isRoundTrip = isRoundTripBooking(data);
+  const currentSegments = tab === 0 ? processedGo : processedBack;
+  const legDep = tab === 0 ? goDep : backDep || goArr;
+  const legArr = tab === 0 ? goArr : backArr || goDep;
+
+  const tabLabel = (dep, arr, fallback) => {
+    if (dep && arr) return `${fallback} ${dep} → ${arr}`;
+    return fallback;
+  };
 
   return (
-    <Box
-      sx={{
-        backgroundColor: "#FFFFFF",
-        borderRadius: 1.5,
-       
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={{ ...bqCardSx, p: 1.75 }}>
+      <BqAccentTitle
+        title="Flight Itinerary"
+        right={
+          <Typography
+            sx={{ fontSize: 10, fontWeight: 600, color: BQ.muted, letterSpacing: 0.6, textTransform: "uppercase" }}
+          >
+            {isRoundTrip ? "ROUNDTRIP" : "ONE WAY"}
+          </Typography>
+        }
+      />
+
       {isRoundTrip ? (
         <Tabs
           value={tab}
-          onChange={(e, v) => setTab(v)}
+          onChange={(_, v) => setTab(v)}
           variant="fullWidth"
           sx={{
-            minHeight: 52,
-            
-            borderBottom: "2px solid #D9D9D9",
-            "& .MuiTabs-indicator": {
-              backgroundColor: "var(--primary-color)",
-              height: 3,
-            },
+            minHeight: 36,
+            mb: 1.5,
+            "& .MuiTabs-indicator": { bgcolor: BQ.navy, height: 3 },
             "& .MuiTab-root": {
-              borderRight: "2px solid #D9D9D9",
-              minHeight: 52,
-            },
-            "& .MuiTab-root:last-of-type": {
-              borderRight: "none",
+              textTransform: "none",
+              fontSize: 11,
+              fontWeight: 600,
+              color: BQ.muted,
+              minHeight: 36,
+              py: 0.75,
+              "&.Mui-selected": { color: BQ.navy },
             },
           }}
         >
-          <Tab
-            disableRipple
-            sx={{ alignItems: "flex-start", textTransform: "none" }}
-            label={
-              <Box>
-                <Typography fontSize={10} color="#6B7280">
-                  Departure
-                </Typography>
-                <Typography fontSize={13} fontWeight={600} color="#111827">
-                  {goRoute}
-                </Typography>
-              </Box>
-            }
-          />
-          <Tab
-            disableRipple
-            sx={{ alignItems: "flex-start", textTransform: "none" }}
-            label={
-              <Box>
-                <Typography fontSize={10} color="#6B7280">
-                  Return
-                </Typography>
-                <Typography fontSize={13} fontWeight={600} color="#111827">
-                  {backRoute}
-                </Typography>
-              </Box>
-            }
-          />
+          <Tab label={tabLabel(goDep, goArr, "Outbound")} />
+          <Tab label={tabLabel(backDep, backArr, "Return")} />
         </Tabs>
-      ) : (
-        <Box sx={{ px: 2, py: 1.5, borderBottom: "2px solid #D9D9D9" }}>
-          <Typography fontSize={12} color="#94A3B8" fontWeight={600} mb={0.5}>
-            Departure
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography fontSize={16} fontWeight={700} color="#0F172A">
-              {goDeparture}
-            </Typography>
-            <ArrowForwardIcon sx={{ fontSize: 18, color: "#0F2F56" }} />
-            <Typography fontSize={16} fontWeight={700} color="#0F172A">
-              {goArrival}
-            </Typography>
-          </Box>
-        </Box>
-      )}
+      ) : null}
 
-      <Box sx={{ px: 2, py: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-        {currentSegments.length === 0 ? (
-          <Typography sx={{ fontSize: 14, color: "#6B7280", textAlign: "center", py: 2 }}>
-            No flight segments available
-          </Typography>
-        ) : (
-          currentSegments.map((segment, index) => {
-            const logoCode = String(segment?.carrierCode || "").toUpperCase();
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1.5,
+          mb: 1.5,
+          py: 0.5,
+        }}
+      >
+        <Typography sx={{ fontSize: 20, fontWeight: 700, color: BQ.navy }}>{legDep}</Typography>
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            bgcolor: BQ.accentSoft,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FlightOutlinedIcon sx={{ color: BQ.navy, fontSize: 18, transform: "rotate(90deg)" }} />
+        </Box>
+        <Typography sx={{ fontSize: 20, fontWeight: 700, color: BQ.navy }}>{legArr}</Typography>
+      </Box>
+
+      {currentSegments.length === 0 ? (
+        <Typography sx={{ fontSize: 12, color: BQ.muted, textAlign: "center", py: 2 }}>
+          No flight segments available
+        </Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          {currentSegments.map((segment, index) => {
+            const logoCode = String(segment.carrierCode || "").toUpperCase();
             const logoKey = `${logoCode}-${tab}-${index}`;
             const logoUrl = logoCode
               ? `https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${logoCode}.png`
@@ -181,105 +178,86 @@ const BookingQueDetailsCard = ({ data }) => {
             const hasLogo = Boolean(logoUrl) && !logoErrors[logoKey];
 
             return (
-            <Box key={`${segment.departTime}-${index}`}>
-            <Box sx={{ display: "flex", gap: 2 }}>
               <Box
+                key={`${segment.departTime}-${index}`}
                 sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  backgroundColor: hasLogo ? "#E6EEF7" : "#E11D48",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  overflow: "hidden",
+                  border: `1px solid ${BQ.border}`,
+                  borderRadius: "8px",
+                  p: 1.25,
+                  bgcolor: BQ.fieldBg,
                 }}
               >
-                {hasLogo ? (
+                <Box sx={{ display: "flex", gap: 1.25, flexWrap: { xs: "wrap", md: "nowrap" } }}>
                   <Box
-                    component="img"
-                    src={logoUrl}
-                    alt={segment?.airline || "Airline"}
-                    sx={{ width: 28, height: 28, objectFit: "contain" }}
-                    onError={() =>
-                      setLogoErrors((prev) => ({
-                        ...prev,
-                        [logoKey]: true,
-                      }))
-                    }
-                  />
-                ) : (
-                  <FlightIcon sx={{ color: "#FFFFFF", fontSize: 18 }} />
-                )}
-              </Box>
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 1.5,
+                      bgcolor: hasLogo ? "#fff" : BQ.navy,
+                      border: `1px solid ${BQ.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {hasLogo ? (
+                      <Box
+                        component="img"
+                        src={logoUrl}
+                        alt=""
+                        sx={{ width: 30, height: 30, objectFit: "contain" }}
+                        onError={() => setLogoErrors((p) => ({ ...p, [logoKey]: true }))}
+                      />
+                    ) : (
+                      <FlightIcon sx={{ color: "#fff", fontSize: 18 }} />
+                    )}
+                  </Box>
 
-              <Box sx={{ flex: 1 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    mb: 0.5,
-                  }}
-                >
-                  <Typography fontSize={14} fontWeight={700} color="#111827">
-                    {segment.departTime}
-                  </Typography>
-                  <Typography fontSize={11} color="#94A3B8">
-                    {segment.departDate}
-                  </Typography>
-                  <ArrowForwardIcon sx={{ fontSize: 16, color: "#94A3B8" }} />
-                  <Typography fontSize={14} fontWeight={700} color="#111827">
-                    {segment.arriveTime}
-                  </Typography>
-                  <Typography fontSize={11} color="#94A3B8">
-                    {segment.arriveDate}
-                  </Typography>
-                </Box>
+                  <Box sx={{ flex: 1, minWidth: 200 }}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.25, flexWrap: "wrap" }}>
+                      <Box>
+                        <Typography sx={{ fontSize: 15, fontWeight: 700, color: BQ.text, lineHeight: 1.2 }}>
+                          {segment.departTime}
+                        </Typography>
+                        <Typography sx={{ fontSize: 10, color: BQ.muted }}>{segment.departDate}</Typography>
+                      </Box>
+                      <ArrowForwardIcon sx={{ color: BQ.actionBlue, mt: 0.35, fontSize: 16 }} />
+                      <Box>
+                        <Typography sx={{ fontSize: 15, fontWeight: 700, color: BQ.text, lineHeight: 1.2 }}>
+                          {segment.arriveTime}
+                        </Typography>
+                        <Typography sx={{ fontSize: 10, color: BQ.muted }}>{segment.arriveDate}</Typography>
+                      </Box>
+                    </Box>
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.4 }}>
-                  <Typography fontSize={11} color="#6B7280">
-                    {segment.route}
-                  </Typography>
-                  <Typography fontSize={11} color="#6B7280">
-                    {segment.airline}
-                  </Typography>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                    <Typography fontSize={11} color="#6B7280">
-                      {segment.cabin}
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: BQ.navy, mt: 0.75 }}>
+                      {segment.dep} → {segment.arr}
                     </Typography>
-                    <Typography fontSize={11} color="#6B7280">
-                      Baggage {segment.baggage}
+                    <Typography sx={{ fontSize: 10, color: BQ.muted, lineHeight: 1.35 }}>
+                      {segment.depName} → {segment.arrName}
                     </Typography>
-                    <Typography fontSize={11} color="#0F172A">
-                      Duration: {segment.duration}
+                    <Typography sx={{ fontSize: 10, color: BQ.muted, mt: 0.15 }}>
+                      {segment.airline}
                     </Typography>
+
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
+                      <BqTagChip>{segment.cabin}</BqTagChip>
+                      <BqTagChip>
+                        {segment.baggage} / {segment.cabinBag}
+                      </BqTagChip>
+                      <BqTagChip>{segment.duration}</BqTagChip>
+                    </Box>
                   </Box>
                 </Box>
+
+                {index < currentSegments.length - 1 ? <Divider sx={{ mt: 2 }} /> : null}
               </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-              <Box
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  backgroundColor: "#0F2F56",
-                }}
-              />
-              <Typography fontSize={11} color="#0F172A" fontWeight={600}>
-                {segment.layover}
-              </Typography>
-            </Box>
-
-            {index < currentSegments.length - 1 && <Divider sx={{ mt: 2 }} />}
-          </Box>
-          );
-          })
-        )}
-      </Box>
+            );
+          })}
+        </Box>
+      )}
     </Box>
   );
 };

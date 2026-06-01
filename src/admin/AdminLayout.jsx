@@ -18,7 +18,7 @@ export default function AdminLayout() {
             md="auto"
             sx={{
               minHeight: "100vh",
-              width: { xs: sidebarCollapsed ? 72 : "100%", md: sidebarCollapsed ? 72 : 260 },
+              width: { xs: sidebarCollapsed ? 72 : "100%", md: sidebarCollapsed ? 72 : 248 },
               flexShrink: 0,
               transition: "width 0.2s ease",
             }}
@@ -38,7 +38,7 @@ export default function AdminLayout() {
               display: "flex",
               flexDirection: "column",
               minHeight: "100vh",
-              bgcolor: "#F4F7F6",
+              bgcolor: "var(--page-bg, #F4F7FE)",
             }}
           >
             <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
@@ -46,7 +46,8 @@ export default function AdminLayout() {
               <Box
                 sx={{
                   flex: 1,
-                  p: { xs: 2, md: 3 },
+                  p: { xs: 2, md: 2 },
+                  overflow: "auto",
                 }}
               >
                 <Outlet />

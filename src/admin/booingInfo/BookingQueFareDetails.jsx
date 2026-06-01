@@ -1,129 +1,85 @@
 import React from "react";
-import { Box, Divider, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import { BQ, bqCardSx } from "./bookingQueTheme.js";
+import { BqAccentTitle } from "./bookingQueUi.jsx";
+import { formatBqNumber, getPaxTypeShort } from "./bookingQueUtils.js";
 
 const BookingQueFareDetails = ({ data }) => {
   const pricebreakdown = data?.pricebreakdown || [];
-  const currency = data?.farecurrency || "MYR";
+  const currency = data?.farecurrency || "BDT";
 
-  // Format number with commas
-  const formatNumber = (num) => {
-    if (!num && num !== 0) return "0.00";
-    const numStr = typeof num === "string" ? num : String(num);
-    const parts = numStr.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.length > 1 ? `${parts[0]}.${parts[1]}` : `${parts[0]}.00`;
-  };
+  const totalBaseFare = pricebreakdown.reduce(
+    (sum, item) => sum + parseFloat(item.BaseFare || 0) * parseFloat(item.PaxCount || 1),
+    0,
+  );
+  const totalTax = pricebreakdown.reduce(
+    (sum, item) => sum + parseFloat(item.Tax || 0) * parseFloat(item.PaxCount || 1),
+    0,
+  );
+  const grandTotal = parseFloat(data?.netPrice || data?.clientFare || 0);
 
-  // Build traveler rows from pricebreakdown
-  const buildTravelerRows = () => {
-    return pricebreakdown.map((item, index) => {
-      const paxType = item.PaxType || "ADULT";
-      const paxCount = item.PaxCount || "1";
-      const baseFare = parseFloat(item.BaseFare || 0) * parseFloat(paxCount);
-      const tax = parseFloat(item.Tax || 0) * parseFloat(paxCount);
-      const total = baseFare + tax;
-      
-      return {
-        label: `Traveler ${index + 1} : ${paxType} (x${paxCount})`,
-        value: `${formatNumber(total)} ${currency}`,
-      };
-    });
-  };
-
-  const rows = buildTravelerRows();
-
-  // Calculate summary
-  const totalBaseFare = pricebreakdown.reduce((sum, item) => {
-    return sum + (parseFloat(item.BaseFare || 0) * parseFloat(item.PaxCount || 1));
-  }, 0);
-
-  const totalTax = pricebreakdown.reduce((sum, item) => {
-    return sum + (parseFloat(item.Tax || 0) * parseFloat(item.PaxCount || 1));
-  }, 0);
-
-  const totalDiscount = pricebreakdown.reduce((sum, item) => {
-    return sum + (parseFloat(item.Discount || 0) * parseFloat(item.PaxCount || 1));
-  }, 0);
+  const paxRows = pricebreakdown.map((item, idx) => {
+    const paxCount = parseFloat(item.PaxCount || 1);
+    const lineTotal =
+      (parseFloat(item.BaseFare || 0) + parseFloat(item.Tax || 0)) * paxCount +
+      parseFloat(item.ServiceFee || 0) * paxCount -
+      parseFloat(item.Discount || 0) * paxCount;
+    const short = getPaxTypeShort(item.PaxType);
+    return {
+      key: `${short}-${idx}`,
+      label: `${short} × ${paxCount}`,
+      value: `${formatBqNumber(lineTotal)} ${currency}`,
+    };
+  });
 
   const summaryRows = [
-    { label: "Total Base Fare", value: `${formatNumber(totalBaseFare)} ${currency}` },
-    { label: "Total Tax & Fee", value: `${formatNumber(totalTax)} ${currency}` },
-    { label: "Discount", value: `-${formatNumber(totalDiscount)} ${currency}` },
+    ...paxRows,
+    { key: "base", label: "Base Fare", value: `${formatBqNumber(totalBaseFare)} ${currency}` },
+    { key: "tax", label: "Tax & Fees", value: `${formatBqNumber(totalTax)} ${currency}` },
   ];
 
-  const grandTotal = parseFloat(data?.netPrice || data?.clientFare || 0);
   return (
-    <Box
-      sx={{
-        backgroundColor: "#FFFFFF",
-        borderRadius: 1.5,
-        border: "1px solid #E5E7EB",
-        p: 2,
-      }}
-    >
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-        <Typography fontSize={12} color="#64748B" fontWeight={600}>
-          Fare Breakdown
-        </Typography>
-        <Typography fontSize={11} color="#64748B">
-          Price as shown in {currency}
-        </Typography>
+    <Box sx={bqCardSx}>
+      <Box sx={{ p: 1.5, pb: 0 }}>
+        <BqAccentTitle
+          title="Fare Summary"
+          right={<ReceiptLongOutlinedIcon sx={{ color: BQ.navy, fontSize: 18 }} />}
+        />
+        <Box sx={{ mt: 0.25, mb: 1 }}>
+          {summaryRows.length > 0 ? (
+            summaryRows.map((row) => (
+              <Box
+                key={row.key}
+                sx={{ display: "flex", justifyContent: "space-between", py: 0.35 }}
+              >
+                <Typography sx={{ fontSize: 11, color: BQ.muted, textTransform: "uppercase" }}>
+                  {row.label}
+                </Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 600, color: BQ.text }}>{row.value}</Typography>
+              </Box>
+            ))
+          ) : (
+            <Typography sx={{ fontSize: 11, color: BQ.muted }}>No fare breakdown available</Typography>
+          )}
+        </Box>
       </Box>
 
-      {rows.length === 0 ? (
-        <Typography sx={{ fontSize: 11, color: "#6B7280", textAlign: "center", py: 1 }}>
-          No fare breakdown available
+      <Box
+        sx={{
+          bgcolor: BQ.navy,
+          px: 1.5,
+          py: 1.25,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.25,
+        }}
+      >
+        <Typography sx={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: 0.5 }}>
+          TOTAL AMOUNT
         </Typography>
-      ) : (
-        rows.map((row) => (
-          <Box
-            key={row.label}
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              py: 0.35,
-            }}
-          >
-            <Typography fontSize={11} color="#475569">
-              {row.label}
-            </Typography>
-            <Typography fontSize={11} color="#0F172A" fontWeight={600}>
-              {row.value}
-            </Typography>
-          </Box>
-        ))
-      )}
-
-      <Divider sx={{ my: 1 }} />
-
-      {summaryRows.map((row) => (
-        <Box
-          key={row.label}
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 0.35,
-          }}
-        >
-          <Typography fontSize={11} color="#475569">
-            {row.label}
-          </Typography>
-          <Typography fontSize={11} color="#0F172A" fontWeight={600}>
-            {row.value}
-          </Typography>
-        </Box>
-      ))}
-
-      <Divider sx={{ my: 1 }} />
-
-      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography fontSize={12} fontWeight={700} color="#0F172A">
-          Grand Total
-        </Typography>
-        <Typography fontSize={12} fontWeight={700} color="#0F2F56">
-          {formatNumber(grandTotal)} {currency}
+        <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
+          {formatBqNumber(grandTotal)} {currency}
         </Typography>
       </Box>
     </Box>

@@ -8,17 +8,13 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Avatar,
   IconButton,
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 
-import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import PersonIcon from "@mui/icons-material/Person";
-import AutorenewIcon from "@mui/icons-material/Autorenew";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -26,19 +22,35 @@ import CardTravelIcon from "@mui/icons-material/CardTravel";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import HotelIcon from "@mui/icons-material/Hotel";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-const companyLogo = "/src/assets/logo.jpeg";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import BookOnlineIcon from "@mui/icons-material/BookOnline";
+import PercentIcon from "@mui/icons-material/Percent";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import HistoryIcon from "@mui/icons-material/History";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import ApiIcon from "@mui/icons-material/Api";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import GroupsIcon from "@mui/icons-material/Groups";
+import AnchorIcon from "@mui/icons-material/Anchor";
+import Button from "@mui/material/Button";
 
-const MENU_TEXT_COLOR = "#4B5563";
-const MENU_ICON_COLOR = "#6B7280";
-const MENU_ACTIVE_COLOR = "#1F2A44";
-const SIDEBAR_BORDER = "#E5E7EB";
-const BRAND_PRIMARY = "#1F2A44";
-const DROPDOWN_ICON_BG = "#111827";
+const SIDEBAR_BG = "var(--sidebar-bg, #0A2B76)";
+const SIDEBAR_CARD_BG = "rgba(0, 0, 0, 0.18)";
+const SIDEBAR_BORDER = "rgba(255, 255, 255, 0.12)";
+const MENU_TEXT_COLOR = "#FFFFFF";
+const MENU_ICON_COLOR = "#FFFFFF";
+const MENU_ACTIVE_COLOR = "#FFFFFF";
+const MENU_ACTIVE_BG = "rgba(44,127,255,0.52)";
+const MENU_ACTIVE_HOVER_BG = "rgba(58,140,255,0.35)";
+const MENU_INACTIVE_HOVER_BG = "rgba(255,255,255,0.08)";
+const BRAND_B2B = "#7DD3FC";
+const DROPDOWN_ICON_BG = "rgba(0, 0, 0, 0.25)";
 
-const SUBMENU_TEXT_COLOR = "#6B7C93";
-const SUBMENU_ACTIVE_COLOR = "#1F4D8B";
-const SUBMENU_ICON_BORDER = "#D1D5DB";
-const SUBMENU_ICON_ACTIVE = "#1F4D8B";
+const SUBMENU_TEXT_COLOR = "rgba(255, 255, 255, 0.75)";
+const SUBMENU_ACTIVE_COLOR = "#FFFFFF";
+const SUBMENU_ICON_BORDER = "rgba(255, 255, 255, 0.35)";
+const SUBMENU_ICON_ACTIVE = "#7DD3FC";
 
 const menuItem = (icon, text, options = {}, location = null, collapsed = false) => {
   const {
@@ -67,20 +79,22 @@ const menuItem = (icon, text, options = {}, location = null, collapsed = false) 
       sx={{
         py: collapsed ? 0.9 : 1.2,
         px: collapsed ? 0 : 1.25,
-        borderRadius: 1.25,
-        minHeight: 42,
+        borderRadius: "5px",
+        minHeight: 44,
+        mx: collapsed ? 0 : 0.5,
         width: "100%",
         alignItems: "center",
         justifyContent: collapsed ? "center" : "flex-start",
         gap: collapsed ? 0 : 1.25,
         textAlign: collapsed ? "center" : "left",
         boxSizing: "border-box",
-        borderLeft: isActive
-          ? "3px solid var(--primary-color, #024DAF)"
-          : "3px solid transparent",
-        bgcolor: isActive ? "rgba(31, 42, 68, 0.08)" : "transparent",
+        borderLeft: "3px solid transparent",
+        bgcolor: isActive ? MENU_ACTIVE_BG : "transparent",
         "&.active": {
-          bgcolor: "rgba(31, 42, 68, 0.08)",
+          bgcolor: MENU_ACTIVE_BG,
+        },
+        "&:hover": {
+          bgcolor: isActive ? MENU_ACTIVE_HOVER_BG : MENU_INACTIVE_HOVER_BG,
         },
         "&.active .MuiListItemIcon-root, &.active .MuiListItemText-primary": {
           color: MENU_ACTIVE_COLOR,
@@ -107,8 +121,9 @@ const menuItem = (icon, text, options = {}, location = null, collapsed = false) 
       <ListItemText
         primaryTypographyProps={{
           fontSize: 14,
-          fontWeight: isActive ? 600 : 500,
-          color: isActive ? MENU_ACTIVE_COLOR : MENU_TEXT_COLOR,
+          fontWeight: isActive ? 700 : 500,
+          color: MENU_TEXT_COLOR,
+          letterSpacing: "0.01em",
         }}
         primary={text}
         sx={{ display: collapsed ? "none" : "block" }}
@@ -164,11 +179,9 @@ const SubMenuItem = ({ text, path, location, collapsed = false }) => {
         cursor: "pointer",
         width: "100%",
         boxSizing: "border-box",
-        borderLeft: isActive
-          ? "3px solid var(--primary-color, #024DAF)"
-          : "3px solid transparent",
+        borderLeft: isActive ? `3px solid ${MENU_ACTIVE_BG}` : "3px solid transparent",
         "&:hover": {
-          bgcolor: "transparent",
+          bgcolor: "rgba(255,255,255,0.04)",
         },
       }}
     >
@@ -177,7 +190,7 @@ const SubMenuItem = ({ text, path, location, collapsed = false }) => {
           width: 14,
           height: 14,
           borderRadius: 1,
-          bgcolor: isActive ? SUBMENU_ICON_ACTIVE : "#fff",
+          bgcolor: isActive ? SUBMENU_ICON_ACTIVE : "transparent",
           border: `1px solid ${isActive ? SUBMENU_ICON_ACTIVE : SUBMENU_ICON_BORDER}`,
           flexShrink: 0,
           zIndex: 1,
@@ -203,10 +216,27 @@ const SubMenuItem = ({ text, path, location, collapsed = false }) => {
   );
 };
 
+const SectionLabel = ({ children, collapsed, first }) =>
+  collapsed ? null : (
+    <Typography
+      sx={{
+        px: 2,
+        pt: first ? 0.5 : 2,
+        pb: 0.75,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.12em",
+        color: "rgba(255, 255, 255, 0.45)",
+      }}
+    >
+      {children}
+    </Typography>
+  );
+
 const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [expandedMenu, setExpandedMenu] = useState(null);
 
   useEffect(() => {
@@ -256,12 +286,8 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
       setExpandedMenu("reports");
       return;
     }
-    if (location.pathname.startsWith("/dashboard/account")) {
-      setExpandedMenu("account");
-      return;
-    }
-    if (location.pathname.startsWith("/dashboard/manage")) {
-      setExpandedMenu("manage");
+    if (location.pathname.startsWith("/dashboard/account") || location.pathname.startsWith("/dashboard/manage")) {
+      setExpandedMenu("prefs");
       return;
     }
     if (location.pathname.startsWith("/dashboard/visa")) {
@@ -341,7 +367,8 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
         borderRight: collapsed ? "none" : `1px solid ${SIDEBAR_BORDER}`,
         display: "flex",
         flexDirection: "column",
-        bgcolor: "#ffffff",
+        bgcolor: SIDEBAR_BG,
+        color: "#fff",
         px: 0,
         overflowY: "hidden",
         overflowX: "hidden",
@@ -355,18 +382,18 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           borderRadius: "2px",
         },
         "&::-webkit-scrollbar-thumb": {
-          background: BRAND_PRIMARY,
+          background: "rgba(255,255,255,0.35)",
           borderRadius: "2px",
           "&:hover": {
-            background: "#0F172A",
+            background: "rgba(255,255,255,0.5)",
           },
         },
       }}
     >
       <Box
         sx={{
-          px: collapsed ? 0 : 1.5,
-          py: collapsed ? 1.8 : 1.5,
+          px: collapsed ? 0 : 2,
+          py: collapsed ? 1.8 : 2,
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
@@ -377,35 +404,35 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           minWidth: 0,
         }}
       >
-        <Box
-          component="img"
-          src={companyLogo}
-          alt="iontrip"
-          sx={{
-            width: 28,
-            height: 28,
-            borderRadius: "6px",
-            objectFit: "cover",
-            display: collapsed ? "none" : "block",
-          }}
-        />
-
-        <Typography
-          sx={{
-            fontWeight: 800,
-            fontSize: 18,
-            color: "var(--secondary-color, #024DAF)",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-            flex: 1,
-            minWidth: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: collapsed ? "none" : "block",
-          }}
-        >
-          iontrip.com
-        </Typography>
+        {collapsed && (
+          <FlightTakeoffIcon sx={{ fontSize: 24, color: BRAND_B2B }} />
+        )}
+        <Box sx={{ display: collapsed ? "none" : "flex", alignItems: "center", gap: 0.5, minWidth: 0, flex: 1 }}>
+          <Typography
+            component="span"
+            sx={{
+              fontWeight: 800,
+              fontSize: 20,
+              color: "#FFFFFF",
+              letterSpacing: "0.02em",
+              lineHeight: 1,
+            }}
+          >
+            IONTRIP
+          </Typography>
+          <FlightTakeoffIcon sx={{ fontSize: 16, color: BRAND_B2B, mx: 0.25, flexShrink: 0 }} />
+          <Typography
+            component="span"
+            sx={{
+              fontWeight: 700,
+              fontSize: 16,
+              color: BRAND_B2B,
+              lineHeight: 1,
+            }}
+          >
+            B2B
+          </Typography>
+        </Box>
 
         <Box sx={{ ml: collapsed ? 0 : "auto", display: "flex", alignItems: "center", flexShrink: 0 }}>
           <IconButton
@@ -415,16 +442,17 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             sx={{
               width: 28,
               height: 28,
-              border: "1px solid #D1D5DB",
-              bgcolor: "#FFFFFF",
-              "&:hover": { bgcolor: "#F9FAFB" },
+              border: "1px solid rgba(255,255,255,0.15)",
+              bgcolor: "rgba(255,255,255,0.06)",
+              color: "#fff",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
               flexShrink: 0,
             }}
           >
             <MenuOpenIcon
               sx={{
                 fontSize: 18,
-                color: "#6B7280",
+                color: "rgba(255,255,255,0.7)",
                 transform: collapsed ? "rotate(180deg)" : "none",
                 transition: "transform 0.2s ease",
               }}
@@ -446,10 +474,10 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             borderRadius: "2px",
           },
           "&::-webkit-scrollbar-thumb": {
-            background: BRAND_PRIMARY,
+            background: "rgba(255,255,255,0.35)",
             borderRadius: "2px",
             "&:hover": {
-              background: "#0F172A",
+              background: "rgba(255,255,255,0.5)",
             },
           },
         }}
@@ -458,7 +486,9 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: 0.75,
+            gap: 0.35,
+            px: collapsed ? 0 : 0.5,
+            py: 0.5,
             ...(collapsed && {
               alignItems: "center",
               width: "100%",
@@ -469,17 +499,22 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }}
         >
           {menuItem(
-            <QueryStatsIcon sx={{ fontSize: 23 }} />,
-            "Admin Dashboard",
-            {
-              path: "/dashboard",
-              end: true,
-            },
+            <DashboardIcon sx={{ fontSize: 22 }} />,
+            "Dashboard",
+            { path: "/dashboard", end: true },
             location,
             collapsed
           )}
 
-          {menuItem(<FlightTakeoffIcon sx={{ fontSize: 23 }} />, "Flight", {
+          <SectionLabel collapsed={collapsed} first>
+            MANAGEMENT
+          </SectionLabel>
+
+          {menuItem(<ManageAccountsIcon sx={{ fontSize: 22 }} />, "Agent Management", {
+            path: "/dashboard/customer/allagent",
+          }, location, collapsed)}
+
+          {menuItem(<BookOnlineIcon sx={{ fontSize: 22 }} />, "Bookings", {
             dropdown: true,
             isOpen: expandedMenu === "bookings",
             onClick: () => handleMainMenuClick("bookings", "/dashboard/flightbookings/bookinghistory"),
@@ -496,7 +531,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<HotelIcon sx={{ fontSize: 23 }} />, "Hotels", {
+          {menuItem(<HotelIcon sx={{ fontSize: 22 }} />, "Hotels", {
             dropdown: true,
             isOpen: expandedMenu === "hotel",
             onClick: () => handleMainMenuClick("hotel", "/dashboard/hotel/bookinghistory"),
@@ -512,7 +547,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<CardTravelIcon sx={{ fontSize: 23 }} />, "Visa", {
+          {menuItem(<CardTravelIcon sx={{ fontSize: 22 }} />, "Visa", {
             dropdown: true,
             isOpen: expandedMenu === "visa",
             onClick: () => handleMainMenuClick("visa", "/dashboard/visa/allvisa"),
@@ -526,7 +561,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<CardTravelIcon sx={{ fontSize: 23 }} />, "Tour", {
+          {menuItem(<CardTravelIcon sx={{ fontSize: 22 }} />, "Tour", {
             dropdown: true,
             isOpen: expandedMenu === "tour",
             onClick: () => handleMainMenuClick("tour", "/dashboard/tour/alltour"),
@@ -540,34 +575,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<PersonIcon sx={{ fontSize: 23 }} />, "Customer", {
-            dropdown: true,
-            isOpen: expandedMenu === "customer",
-            onClick: () => handleMainMenuClick("customer", "/dashboard/customer/allagent"),
-            onToggleClick: () => handleToggle("customer"),
-            activePaths: ["/dashboard/customer"],
-          }, location, collapsed)}
-          <Collapse in={expandedMenu === "customer"} timeout="auto" unmountOnExit>
-            <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Agent History" path="/dashboard/customer/allagent" location={location} />
-            </Box>
-          </Collapse>
-
-          {menuItem(<SettingsIcon sx={{ fontSize: 23 }} />, "Settings", {
-            dropdown: true,
-            isOpen: expandedMenu === "settings",
-            onClick: () => handleMainMenuClick("settings", "/dashboard/settings/alladmin"),
-            onToggleClick: () => handleToggle("settings"),
-            activePaths: ["/dashboard/settings"],
-          }, location, collapsed)}
-          <Collapse in={expandedMenu === "settings"} timeout="auto" unmountOnExit>
-            <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="All Admin" path="/dashboard/settings/alladmin" location={location} />
-              <SubMenuItem collapsed={collapsed} text="All Bank" path="/dashboard/settings/allbank" location={location} />
-            </Box>
-          </Collapse>
-
-          {menuItem(<AccountBalanceWalletIcon sx={{ fontSize: 23 }} />, "Wallet", {
+          {menuItem(<AccountBalanceWalletIcon sx={{ fontSize: 22 }} />, "Credit & Wallet", {
             dropdown: true,
             isOpen: expandedMenu === "wallet",
             onClick: () => handleMainMenuClick("wallet", "/dashboard/wallet"),
@@ -581,35 +589,15 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<PersonIcon sx={{ fontSize: 23 }} />, "Account", {
-            dropdown: true,
-            isOpen: expandedMenu === "account",
-            onClick: () => handleMainMenuClick("account", "/dashboard/account"),
-            onToggleClick: () => handleToggle("account"),
-            activePaths: ["/dashboard/account"],
+          {menuItem(<PercentIcon sx={{ fontSize: 22 }} />, "Commission", {
+            path: "/dashboard/ledgerreport",
           }, location, collapsed)}
-          <Collapse in={expandedMenu === "account"} timeout="auto" unmountOnExit>
-            <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Profile" path="/dashboard/account" location={location} />
-              <SubMenuItem collapsed={collapsed} text="All Traveler" path="/dashboard/account/alltraveler" location={location} />
-            </Box>
-          </Collapse>
 
-          {menuItem(<AutorenewIcon sx={{ fontSize: 23 }} />, "Manage", {
-            dropdown: true,
-            isOpen: expandedMenu === "manage",
-            onClick: () => handleMainMenuClick("manage", "/dashboard/manage/allblog"),
-            onToggleClick: () => handleToggle("manage"),
-            activePaths: ["/dashboard/manage"],
+          {menuItem(<AccountBalanceIcon sx={{ fontSize: 22 }} />, "Finance", {
+            path: "/dashboard/alldeposit",
           }, location, collapsed)}
-          <Collapse in={expandedMenu === "manage"} timeout="auto" unmountOnExit>
-            <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="All Blog" path="/dashboard/manage/allblog" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Manage Website" path="/dashboard/manage/website" location={location} />
-            </Box>
-          </Collapse>
 
-          {menuItem(<BarChartIcon sx={{ fontSize: 23 }} />, "Ot Reports", {
+          {menuItem(<BarChartIcon sx={{ fontSize: 22 }} />, "Reports", {
             dropdown: true,
             isOpen: expandedMenu === "reports",
             onClick: () => handleMainMenuClick("reports", "/dashboard/ledgerreport"),
@@ -624,46 +612,134 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<LogoutIcon sx={{ fontSize: 23 }} />, "Logout", {
+          {menuItem(<HistoryIcon sx={{ fontSize: 22 }} />, "Audit Logs", {
+            path: "/dashboard",
+            end: true,
+          }, location, collapsed)}
+
+          <SectionLabel collapsed={collapsed}>SYSTEM</SectionLabel>
+
+          {menuItem(<AdminPanelSettingsIcon sx={{ fontSize: 22 }} />, "User Management", {
+            dropdown: true,
+            isOpen: expandedMenu === "settings",
+            onClick: () => handleMainMenuClick("settings", "/dashboard/settings/alladmin"),
+            onToggleClick: () => handleToggle("settings"),
+            activePaths: ["/dashboard/settings"],
+          }, location, collapsed)}
+          <Collapse in={expandedMenu === "settings"} timeout="auto" unmountOnExit>
+            <Box sx={submenuRailSx}>
+              <SubMenuItem collapsed={collapsed} text="All Admin" path="/dashboard/settings/alladmin" location={location} />
+              <SubMenuItem collapsed={collapsed} text="All Bank" path="/dashboard/settings/allbank" location={location} />
+            </Box>
+          </Collapse>
+
+          {menuItem(<GroupsIcon sx={{ fontSize: 22 }} />, "Role & Permission", {
+            path: "/dashboard/settings/alladmin",
+          }, location, collapsed)}
+
+          {menuItem(<ApiIcon sx={{ fontSize: 22 }} />, "API Integrations", {
+            path: "/dashboard/manage/website",
+          }, location, collapsed)}
+
+          {menuItem(<NotificationsNoneIcon sx={{ fontSize: 22 }} />, "Notifications", {
+            path: "/dashboard",
+            end: true,
+          }, location, collapsed)}
+
+          {menuItem(<SettingsIcon sx={{ fontSize: 22 }} />, "Settings", {
+            dropdown: true,
+            isOpen: expandedMenu === "prefs",
+            onClick: () => handleMainMenuClick("prefs", "/dashboard/account"),
+            onToggleClick: () => handleToggle("prefs"),
+            activePaths: ["/dashboard/account", "/dashboard/manage"],
+          }, location, collapsed)}
+          <Collapse in={expandedMenu === "prefs"} timeout="auto" unmountOnExit>
+            <Box sx={submenuRailSx}>
+              <SubMenuItem collapsed={collapsed} text="Profile" path="/dashboard/account" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Manage Website" path="/dashboard/manage/website" location={location} />
+              <SubMenuItem collapsed={collapsed} text="All Blog" path="/dashboard/manage/allblog" location={location} />
+            </Box>
+          </Collapse>
+
+          {menuItem(<LogoutIcon sx={{ fontSize: 22 }} />, "Logout", {
             onClick: handleLogout,
           }, location, collapsed)}
         </List>
       </Box>
 
-      <Box
-        sx={{
-          flexShrink: 0,
-          px: collapsed ? 0.5 : 1.5,
-          py: 1.5,
-          borderTop: collapsed ? "none" : `1px solid ${SIDEBAR_BORDER}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 1.5,
-          overflow: "hidden",
-          minWidth: 0,
-        }}
-      >
-        <Avatar
-          sx={{
-            width: collapsed ? 32 : 36,
-            height: collapsed ? 32 : 36,
-            bgcolor: "#f1f3f7",
-            color: "#1f2a44",
-            flexShrink: 0,
-          }}
-        >
-          {user?.adminId?.[0]?.toUpperCase() || user?.name?.[0]?.toUpperCase() || "S"}
-        </Avatar>
-        <Box sx={{ minWidth: 0, display: collapsed ? "none" : "block" }}>
-          <Typography fontSize={12} fontWeight={600} noWrap>
-            {user?.name || user?.adminId || "Sakhawat Hosen"}
-          </Typography>
-          <Typography fontSize={12} color="text.secondary" noWrap>
-            {user?.role || user?.position || "Project Manager"}
-          </Typography>
+      {!collapsed && (
+        <Box sx={{ px: 1.5, py: 1.5, flexShrink: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box
+            sx={{
+              borderRadius: "12px",
+              bgcolor: SIDEBAR_CARD_BG,
+              border: `1px solid ${SIDEBAR_BORDER}`,
+              p: 1.5,
+            }}
+          >
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", mb: 1 }}>Business Overview</Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>
+                  IONTRIP B2B Platform
+                </Typography>
+                <Typography sx={{ fontSize: 10, color: "rgba(255,255,255,0.55)", mt: 0.35, lineHeight: 1.4 }}>
+                  Super Admin Control Center
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                  bgcolor: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              >
+                <AnchorIcon sx={{ fontSize: 20, color: BRAND_B2B }} />
+              </Box>
+            </Box>
+            <Button
+              fullWidth
+              size="small"
+              sx={{
+                textTransform: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: "8px",
+                bgcolor: "rgba(0, 0, 0, 0.28)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.1)",
+                py: 0.85,
+                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.38)" },
+              }}
+            >
+              View System Health
+            </Button>
+          </Box>
+
+          <Box
+            sx={{
+              borderRadius: "12px",
+              bgcolor: SIDEBAR_CARD_BG,
+              border: `1px solid ${SIDEBAR_BORDER}`,
+              p: 1.5,
+            }}
+          >
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", mb: 1 }}>System Status</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#22C55E", flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#4ADE80" }}>
+                All Systems Operational
+              </Typography>
+            </Box>
+          </Box>
         </Box>
-      </Box>
+      )}
     </Box>
   );
 };
