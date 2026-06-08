@@ -33,10 +33,6 @@ import FlightIcon from "@mui/icons-material/Flight";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import ApiIcon from "@mui/icons-material/Api";
-import SpeedIcon from "@mui/icons-material/Speed";
 import BookOnlineIcon from "@mui/icons-material/BookOnline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import ScheduleIcon from "@mui/icons-material/Schedule";
@@ -522,12 +518,10 @@ export default function Dashboard() {
   ];
 
   const footerStats = [
-    { label: "Total Users", value: "2,548", trend: "+12.5%", up: true, icon: <PeopleOutlineIcon sx={{ fontSize: 14, color: C.muted }} /> },
     { label: "Total Agents", value: "1,245", trend: "+10.3%", up: true, icon: <GroupsIcon sx={{ fontSize: 14, color: C.muted }} /> },
-    { label: "Total Customers", value: "18,750", trend: "+14.6%", up: true, icon: <PersonOutlineIcon sx={{ fontSize: 14, color: C.muted }} /> },
-    { label: "API Requests (Today)", value: "12,850", trend: "+8.2%", up: true, icon: <ApiIcon sx={{ fontSize: 14, color: C.muted }} /> },
-    { label: "Success Rate", value: "99.6%", trend: "+2.1%", up: true, icon: <SpeedIcon sx={{ fontSize: 14, color: C.muted }} /> },
-    { label: "System Uptime", value: "99.9%", chip: true, icon: <CheckCircleOutlineIcon sx={{ fontSize: 14, color: C.muted }} /> },
+    { label: "Verified Agents", value: "1,020", trend: "+8.7%", up: true, icon: <CheckCircleOutlineIcon sx={{ fontSize: 14, color: C.muted }} /> },
+    { label: "Pending Verification", value: "170", trend: "-1.5%", up: false, icon: <ScheduleIcon sx={{ fontSize: 14, color: C.muted }} /> },
+    { label: "Inactive Agents", value: "55", trend: "-0.8%", up: false, icon: <WarningAmberIcon sx={{ fontSize: 14, color: C.muted }} /> },
   ];
 
   const timeStr = serverTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });

@@ -36,4 +36,6 @@ export const API_ENDPOINTS = {
   BLOG_DELETE: "/blogs/admin/delete",
   BLOG_CATEGORIES: "/blogs/admin/categories",
   BLOG_TAGS: "/blogs/admin/tags",
+  REFUND_QUOTE: (id) => `/refund/admin/${id}/quote`,
+  REFUND_REJECT: (id) => `/refund/admin/${id}/reject`,
 };

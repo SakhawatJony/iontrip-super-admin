@@ -18,7 +18,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BQ, bqSidebarBtnSx } from "./bookingQueTheme.js";
+import { BQ, bqCardSx, bqSidebarBtnSx } from "./bookingQueTheme.js";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CancelIcon from "@mui/icons-material/Cancel";
 import MoneyOffIcon from "@mui/icons-material/MoneyOff";
@@ -26,6 +26,8 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_BASE_URL } from "../../config/api.js";
+import RefundQuotationDialog from "./RefundQuotationDialog.jsx";
+import RefundRejectDialog from "./RefundRejectDialog.jsx";
 import axios from "axios";
 import Swal from "sweetalert2";
 import BookingQueInfoSection from "./BookingQueInfoSection";
@@ -37,7 +39,12 @@ import BookingQueSessionTime from "./BookingQueSessionTime";
 import { unwrapBookingResponse } from "../flightItineraryUtils.js";
 import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import { resolveBookingAgentEmail, formatBqNumber } from "./bookingQueUtils.js";
+import {
+  resolveBookingAgentEmail,
+  formatBqNumber,
+  isRefundRequestStatus,
+  resolveRefundRequestId,
+} from "./bookingQueUtils.js";
 
 const BookingQueDetails = () => {
   const location = useLocation();
@@ -63,6 +70,8 @@ const BookingQueDetails = () => {
   const [walletBalanceLoading, setWalletBalanceLoading] = useState(false);
   const [payWithWalletLoading, setPayWithWalletLoading] = useState(false);
   const [cancelBookingLoading, setCancelBookingLoading] = useState(false);
+  const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -483,6 +492,28 @@ const BookingQueDetails = () => {
   const rawStatusNorm = (bookingData?.status || "").toUpperCase().replace(/\s+/g, "");
   const isHold = rawStatusNorm === "HOLD" || rawStatusNorm === "BOOKED";
   const isIssueInProcess = rawStatusNorm === "ISSUEINPROCESS";
+  const isRefundRequest = isRefundRequestStatus(bookingData?.status);
+
+  const refundActionBtnBaseSx = {
+    textTransform: "none",
+    fontWeight: 700,
+    fontSize: 13,
+    py: 0.75,
+    minHeight: 36,
+    borderRadius: "4px",
+    boxShadow: "none",
+    flex: 1,
+    color: "#fff",
+    "&.Mui-disabled": { bgcolor: "#B0BEC5", color: "#fff" },
+  };
+
+  const handleMakeRefundQuotation = () => {
+    setQuotationDialogOpen(true);
+  };
+
+  const handleCancelRefundQuotation = () => {
+    setRejectDialogOpen(true);
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: BQ.pageBg, pb: 4 }}>
@@ -528,119 +559,48 @@ const BookingQueDetails = () => {
                 top: { lg: 12 },
               }}
             >
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<ShowChartOutlinedIcon />}
-                onClick={() => setTimelineModalOpen(true)}
-                sx={{
-                  ...bqSidebarBtnSx,
-                  bgcolor: BQ.navy,
-                  color: "#fff",
-                  "&:hover": { bgcolor: BQ.navyDark },
-                }}
-              >
-                Booking Timeline
-              </Button>
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={<FileDownloadIcon />}
-                endIcon={<KeyboardArrowDownIcon />}
-                onClick={(e) => setVoucherMenuAnchor(e.currentTarget)}
-                sx={{
-                  ...bqSidebarBtnSx,
-                  bgcolor: BQ.actionBlue,
-                  color: "#fff",
-                  "&:hover": { bgcolor: BQ.actionBlueHover },
-                }}
-              >
-                Download Voucher
-              </Button>
-              <Menu
-                anchorEl={voucherMenuAnchor}
-                open={Boolean(voucherMenuAnchor)}
-                onClose={() => setVoucherMenuAnchor(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                PaperProps={{ sx: { minWidth: 200, mt: 1.5 } }}
-              >
-                {(() => {
-                  const rawStatus = (bookingData?.status || "").toUpperCase();
-                  const isBookedOrCancelled = ["BOOKED", "HOLD", "CANCELLED", "CANCELED", "EXPIRED"].includes(rawStatus);
-                  const goToInvoice = (invoiceType) => {
-                    setVoucherMenuAnchor(null);
-                    navigate("/dashboard/bookingqueueinvoice", {
-                      state: { bookingData, invoiceType },
-                    });
-                  };
-                  if (isBookedOrCancelled) {
-                    return (
-                      <MenuItem onClick={() => goToInvoice("Booking Invoice")}>
-                        Booking Invoice
-                      </MenuItem>
-                    );
-                  }
-                  return (
-                    <>
-                      <MenuItem onClick={() => goToInvoice("E-Ticket")}>
-                        E-Ticket
-                      </MenuItem>
-                      <MenuItem onClick={() => goToInvoice("Agent Invoice")}>
-                        Agent Invoice
-                      </MenuItem>
-                      <MenuItem onClick={() => goToInvoice("Customer Invoice")}>
-                        Customer Invoice
-                      </MenuItem>
-                    </>
-                  );
-                })()}
-              </Menu>
-              {isHold ? (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AccountBalanceWalletIcon />}
-                  onClick={() => setIssueBalanceDialogOpen(true)}
-                  sx={{
-                    ...bqSidebarBtnSx,
-                    bgcolor: BQ.navy,
-                    color: "#fff",
-                    "&:hover": { bgcolor: BQ.navyDark },
-                  }}
-                >
-                  Issue with Balance
-                </Button>
-              ) : null}
-              {!isHold && !isIssueInProcess ? (
+              {isRefundRequest ? (
+                <Box sx={{ ...bqCardSx, p: 1.75 }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={handleMakeRefundQuotation}
+                      sx={{
+                        ...refundActionBtnBaseSx,
+                        bgcolor: "var(--secondary-color, #024DAF)",
+                        "&:hover": {
+                          bgcolor: "var(--secondary-color, #024DAF)",
+                          opacity: 0.9,
+                        },
+                      }}
+                    >
+                      Make Refund Quotation
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={handleCancelRefundQuotation}
+                      sx={{
+                        ...refundActionBtnBaseSx,
+                        bgcolor: "var(--primary-color, #0F2F56)",
+                        "&:hover": {
+                          bgcolor: "var(--primary-color, #0F2F56)",
+                          opacity: 0.9,
+                        },
+                      }}
+                    >
+                      Cancel Refund Quotation
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
                 <>
                   <Button
                     fullWidth
                     variant="contained"
-                    startIcon={<MoneyOffIcon />}
-                    onClick={() =>
-                      navigate("/dashboard/flightbookings/refundshistory", {
-                        state: { bookingId: bookingData?.bookingId || bookingId },
-                      })
-                    }
-                    sx={{
-                      ...bqSidebarBtnSx,
-                      bgcolor: BQ.refundBtn,
-                      color: "#fff",
-                      "&:hover": { bgcolor: BQ.refundBtnHover },
-                    }}
-                  >
-                    Refund
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<AutorenewIcon />}
-                    onClick={() =>
-                      navigate("/dashboard/flightbookings/reissuehistory", {
-                        state: { bookingId: bookingData?.bookingId || bookingId },
-                      })
-                    }
+                    startIcon={<ShowChartOutlinedIcon />}
+                    onClick={() => setTimelineModalOpen(true)}
                     sx={{
                       ...bqSidebarBtnSx,
                       bgcolor: BQ.navy,
@@ -648,47 +608,161 @@ const BookingQueDetails = () => {
                       "&:hover": { bgcolor: BQ.navyDark },
                     }}
                   >
-                    Reissue
+                    Booking Timeline
                   </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<FileDownloadIcon />}
+                    endIcon={<KeyboardArrowDownIcon />}
+                    onClick={(e) => setVoucherMenuAnchor(e.currentTarget)}
+                    sx={{
+                      ...bqSidebarBtnSx,
+                      bgcolor: BQ.actionBlue,
+                      color: "#fff",
+                      "&:hover": { bgcolor: BQ.actionBlueHover },
+                    }}
+                  >
+                    Download Voucher
+                  </Button>
+                  <Menu
+                    anchorEl={voucherMenuAnchor}
+                    open={Boolean(voucherMenuAnchor)}
+                    onClose={() => setVoucherMenuAnchor(null)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    PaperProps={{ sx: { minWidth: 200, mt: 1.5 } }}
+                  >
+                    {(() => {
+                      const rawStatus = (bookingData?.status || "").toUpperCase();
+                      const isBookedOrCancelled = ["BOOKED", "HOLD", "CANCELLED", "CANCELED", "EXPIRED"].includes(rawStatus);
+                      const goToInvoice = (invoiceType) => {
+                        setVoucherMenuAnchor(null);
+                        navigate("/dashboard/bookingqueueinvoice", {
+                          state: { bookingData, invoiceType },
+                        });
+                      };
+                      if (isBookedOrCancelled) {
+                        return (
+                          <MenuItem onClick={() => goToInvoice("Booking Invoice")}>
+                            Booking Invoice
+                          </MenuItem>
+                        );
+                      }
+                      return (
+                        <>
+                          <MenuItem onClick={() => goToInvoice("E-Ticket")}>
+                            E-Ticket
+                          </MenuItem>
+                          <MenuItem onClick={() => goToInvoice("Agent Invoice")}>
+                            Agent Invoice
+                          </MenuItem>
+                          <MenuItem onClick={() => goToInvoice("Customer Invoice")}>
+                            Customer Invoice
+                          </MenuItem>
+                        </>
+                      );
+                    })()}
+                  </Menu>
+                  {isHold ? (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<AccountBalanceWalletIcon />}
+                      onClick={() => setIssueBalanceDialogOpen(true)}
+                      sx={{
+                        ...bqSidebarBtnSx,
+                        bgcolor: BQ.navy,
+                        color: "#fff",
+                        "&:hover": { bgcolor: BQ.navyDark },
+                      }}
+                    >
+                      Issue with Balance
+                    </Button>
+                  ) : null}
+                  {!isHold && !isIssueInProcess ? (
+                    <>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<MoneyOffIcon />}
+                        onClick={() =>
+                          navigate("/dashboard/bookingqueuedetails/refund", {
+                            state: {
+                              bookingId: bookingData?.bookingId || bookingId,
+                              bookingData,
+                              refundRequestId: resolveRefundRequestId(bookingData),
+                            },
+                          })
+                        }
+                        sx={{
+                          ...bqSidebarBtnSx,
+                          bgcolor: BQ.refundBtn,
+                          color: "#fff",
+                          "&:hover": { bgcolor: BQ.refundBtnHover },
+                        }}
+                      >
+                        Refund
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<AutorenewIcon />}
+                        onClick={() =>
+                          navigate("/dashboard/flightbookings/reissuehistory", {
+                            state: { bookingId: bookingData?.bookingId || bookingId },
+                          })
+                        }
+                        sx={{
+                          ...bqSidebarBtnSx,
+                          bgcolor: BQ.navy,
+                          color: "#fff",
+                          "&:hover": { bgcolor: BQ.navyDark },
+                        }}
+                      >
+                        Reissue
+                      </Button>
+                    </>
+                  ) : null}
+                  {isHold ? (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<CancelIcon />}
+                      onClick={handleCancelBooking}
+                      disabled={cancelBookingLoading}
+                      sx={{
+                        ...bqSidebarBtnSx,
+                        bgcolor: BQ.cancelRed,
+                        color: "#fff",
+                        "&:hover": { bgcolor: BQ.cancelRedHover },
+                      }}
+                    >
+                      {cancelBookingLoading ? "Cancelling..." : "Cancel Booking"}
+                    </Button>
+                  ) : null}
+                  {isIssueInProcess ? (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<PaymentIcon />}
+                      onClick={() =>
+                        navigate("/dashboard/maketicketed", {
+                          state: { bookingData, bookingId },
+                        })
+                      }
+                      sx={{
+                        ...bqSidebarBtnSx,
+                        bgcolor: BQ.actionBlue,
+                        color: "#fff",
+                        "&:hover": { bgcolor: BQ.actionBlueHover },
+                      }}
+                    >
+                      Make ticketed
+                    </Button>
+                  ) : null}
                 </>
-              ) : null}
-              {isHold ? (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<CancelIcon />}
-                  onClick={handleCancelBooking}
-                  disabled={cancelBookingLoading}
-                  sx={{
-                    ...bqSidebarBtnSx,
-                    bgcolor: BQ.cancelRed,
-                    color: "#fff",
-                    "&:hover": { bgcolor: BQ.cancelRedHover },
-                  }}
-                >
-                  {cancelBookingLoading ? "Cancelling..." : "Cancel Booking"}
-                </Button>
-              ) : null}
-              {isIssueInProcess ? (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<PaymentIcon />}
-                  onClick={() =>
-                    navigate("/dashboard/maketicketed", {
-                      state: { bookingData, bookingId },
-                    })
-                  }
-                  sx={{
-                    ...bqSidebarBtnSx,
-                    bgcolor: BQ.actionBlue,
-                    color: "#fff",
-                    "&:hover": { bgcolor: BQ.actionBlueHover },
-                  }}
-                >
-                  Make ticketed
-                </Button>
-              ) : null}
+              )}
               <BookingQueFareDetails data={bookingData} />
               <BookingQueSupport />
               <BookingQueSessionTime data={bookingData} />
@@ -1053,6 +1127,20 @@ const BookingQueDetails = () => {
           </Box>
         </Box>
       </Modal>
+
+      <RefundQuotationDialog
+        open={quotationDialogOpen}
+        onClose={() => setQuotationDialogOpen(false)}
+        bookingId={bookingData?.bookingId || bookingId}
+        token={superadminToken}
+        defaultQuotedAmount={bookingData?.netPrice ?? bookingData?.clientFare ?? ""}
+      />
+      <RefundRejectDialog
+        open={rejectDialogOpen}
+        onClose={() => setRejectDialogOpen(false)}
+        bookingId={bookingData?.bookingId || bookingId}
+        token={superadminToken}
+      />
     </Box>
   );
 };

@@ -16,6 +16,7 @@ import AddAdmin from "./admin/AddAdmin.jsx";
 import AllBank from "./admin/AllBank.jsx";
 import LedgerReport from "./admin/LedgerReport.jsx";
 import BookingQueDetails from "./admin/booingInfo/BookingQueDetails.jsx";
+import BookingQueRefund from "./admin/booingInfo/BookingQueRefund.jsx";
 import BookingQueInvoice from "./admin/booingInfo/BookingQueInvoice.jsx";
 import MakeTicketed from "./admin/booingInfo/MakeTicketed.jsx";
 import AllBlog from "./admin/AllBlog.jsx";
@@ -99,6 +100,7 @@ export default function App() {
             <Route path="addblog" element={<AddBlog />} />
             <Route path="editblog/:id" element={<AddBlog />} />
             <Route path="bookingqueuedetails" element={<BookingQueDetails />} />
+            <Route path="bookingqueuedetails/refund" element={<BookingQueRefund />} />
             <Route path="bookingqueueinvoice" element={<BookingQueInvoice />} />
             <Route path="maketicketed" element={<MakeTicketed />} />
 

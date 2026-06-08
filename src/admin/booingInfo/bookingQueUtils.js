@@ -49,6 +49,25 @@ export function getAirlineLogoUrl(data) {
   return `https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${carrier}.png`;
 }
 
+export function isRefundRequestStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REFUNDREQUEST" || normalized.includes("REFUNDREQUEST");
+}
+
+export function resolveRefundRequestId(bookingData) {
+  return (
+    bookingData?.refundRequestId ||
+    bookingData?.refundId ||
+    bookingData?.refundRequest?.id ||
+    bookingData?.refund?.id ||
+    bookingData?.refund?.refundRequestId ||
+    bookingData?.requestId ||
+    ""
+  );
+}
+
 export function resolveBookingAgentEmail(data, fallbackEmail = "") {
   return (
     data?.agentEmail ||

@@ -25,8 +25,6 @@ import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import BookOnlineIcon from "@mui/icons-material/BookOnline";
-import PercentIcon from "@mui/icons-material/Percent";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import HistoryIcon from "@mui/icons-material/History";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ApiIcon from "@mui/icons-material/Api";
@@ -34,6 +32,7 @@ import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import GroupsIcon from "@mui/icons-material/Groups";
 import AnchorIcon from "@mui/icons-material/Anchor";
 import Button from "@mui/material/Button";
+import logo from "../assets/logo.png";
 
 const SIDEBAR_BG = "var(--sidebar-bg, #0A2B76)";
 const SIDEBAR_CARD_BG = "rgba(0, 0, 0, 0.18)";
@@ -405,33 +404,20 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
         }}
       >
         {collapsed && (
-          <FlightTakeoffIcon sx={{ fontSize: 24, color: BRAND_B2B }} />
+          <Box
+            component="img"
+            src={logo}
+            alt="Iontrip Logo"
+            sx={{ width: 30, height: 30, objectFit: "contain" }}
+          />
         )}
         <Box sx={{ display: collapsed ? "none" : "flex", alignItems: "center", gap: 0.5, minWidth: 0, flex: 1 }}>
-          <Typography
-            component="span"
-            sx={{
-              fontWeight: 800,
-              fontSize: 20,
-              color: "#FFFFFF",
-              letterSpacing: "0.02em",
-              lineHeight: 1,
-            }}
-          >
-            IONTRIP
-          </Typography>
-          <FlightTakeoffIcon sx={{ fontSize: 16, color: BRAND_B2B, mx: 0.25, flexShrink: 0 }} />
-          <Typography
-            component="span"
-            sx={{
-              fontWeight: 700,
-              fontSize: 16,
-              color: BRAND_B2B,
-              lineHeight: 1,
-            }}
-          >
-            B2B
-          </Typography>
+          <Box
+            component="img"
+            src={logo}
+            alt="Iontrip Logo"
+            sx={{ height: 36, width: "auto", maxWidth: "100%", objectFit: "contain" }}
+          />
         </Box>
 
         <Box sx={{ ml: collapsed ? 0 : "auto", display: "flex", alignItems: "center", flexShrink: 0 }}>
@@ -589,14 +575,6 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<PercentIcon sx={{ fontSize: 22 }} />, "Commission", {
-            path: "/dashboard/ledgerreport",
-          }, location, collapsed)}
-
-          {menuItem(<AccountBalanceIcon sx={{ fontSize: 22 }} />, "Finance", {
-            path: "/dashboard/alldeposit",
-          }, location, collapsed)}
-
           {menuItem(<BarChartIcon sx={{ fontSize: 22 }} />, "Reports", {
             dropdown: true,
             isOpen: expandedMenu === "reports",
@@ -612,14 +590,10 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<HistoryIcon sx={{ fontSize: 22 }} />, "Audit Logs", {
-            path: "/dashboard",
-            end: true,
-          }, location, collapsed)}
-
+        
           <SectionLabel collapsed={collapsed}>SYSTEM</SectionLabel>
 
-          {menuItem(<AdminPanelSettingsIcon sx={{ fontSize: 22 }} />, "User Management", {
+          {menuItem(<AdminPanelSettingsIcon sx={{ fontSize: 22 }} />, "Management", {
             dropdown: true,
             isOpen: expandedMenu === "settings",
             onClick: () => handleMainMenuClick("settings", "/dashboard/settings/alladmin"),
@@ -633,18 +607,9 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             </Box>
           </Collapse>
 
-          {menuItem(<GroupsIcon sx={{ fontSize: 22 }} />, "Role & Permission", {
-            path: "/dashboard/settings/alladmin",
-          }, location, collapsed)}
+          
 
-          {menuItem(<ApiIcon sx={{ fontSize: 22 }} />, "API Integrations", {
-            path: "/dashboard/manage/website",
-          }, location, collapsed)}
-
-          {menuItem(<NotificationsNoneIcon sx={{ fontSize: 22 }} />, "Notifications", {
-            path: "/dashboard",
-            end: true,
-          }, location, collapsed)}
+         
 
           {menuItem(<SettingsIcon sx={{ fontSize: 22 }} />, "Settings", {
             dropdown: true,
@@ -655,7 +620,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }, location, collapsed)}
           <Collapse in={expandedMenu === "prefs"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Profile" path="/dashboard/account" location={location} />
+              
               <SubMenuItem collapsed={collapsed} text="Manage Website" path="/dashboard/manage/website" location={location} />
               <SubMenuItem collapsed={collapsed} text="All Blog" path="/dashboard/manage/allblog" location={location} />
             </Box>
