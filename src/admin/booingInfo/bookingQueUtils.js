@@ -56,6 +56,27 @@ export function isRefundRequestStatus(status) {
   return normalized === "REFUNDREQUEST" || normalized.includes("REFUNDREQUEST");
 }
 
+export function isRefundQuotedStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REFUNDQUOTED" || normalized.includes("REFUNDQUOTED");
+}
+
+export function isRefundProcessingStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REFUNDPROCESSING" || normalized.includes("REFUNDPROCESSING");
+}
+
+export function isRefundedStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REFUNDED";
+}
+
 export function resolveRefundRequestId(bookingData) {
   return (
     bookingData?.refundRequestId ||

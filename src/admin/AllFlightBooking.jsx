@@ -12,6 +12,12 @@ import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
 import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
+import {
+  formatTripTypeLabel,
+  mapBookingToTableRow,
+  resolveBookingFlightDate,
+  resolveBookingRoute,
+} from "./bookingListUtils.js";
 
 // Status mapping from API to display labels
 const statusLabelMap = {
@@ -25,23 +31,55 @@ const statusLabelMap = {
 };
 
 const tableColumns = [
-  { key: "bookingId", label: "Booking ID", width: "120px" },
+  { key: "bookingId", label: "Booking Id", width: "120px" },
   { key: "customer", label: "Customer", width: "150px" },
-  { key: "route", label: "Route", width: "150px" },
-  { key: "type", label: "Type", width: "100px" },
-  { key: "pnr", label: "PNR", width: "100px" },
-  { key: "bookingTime", label: "Booking Time", width: "150px" },
-  { key: "dueAmount", label: "Due Amount", width: "120px" },
-  { key: "grossFare", label: "Base Fare", width: "120px" },
-  { key: "ticketFare", label: "Ticket Fare", width: "120px" },
-  { key: "pax", label: "PAX", width: "80px" },
-  { key: "airline", label: "Airline", width: "150px" },
-  { key: "flightDate", label: "Flight Date", width: "120px" },
-  { key: "lastTicketTime", label: "Last Ticket Time", width: "150px" },
-  { key: "status", label: "Status", width: "110px" },
+  { key: "route", label: "Route", width: "90px" },
+  { key: "type", label: "Type", width: "80px" },
+  { key: "pnr", label: "PNR", width: "80px" },
+  { key: "bookingTime", label: "Booking Time", width: "100px" },
+  { key: "dueAmount", label: "Due Amount", width: "90px" },
+  { key: "grossFare", label: "Gross Fare", width: "100px" },
+  { key: "ticketFare", label: "Ticket Fare", width: "100px" },
+  { key: "pax", label: "PAX", width: "50px" },
+  { key: "airline", label: "Airline", width: "70px" },
+  { key: "flightDate", label: "Flight Date", width: "100px" },
+  { key: "status", label: "Status", width: "120px" },
 ];
 
 const tableGridTemplate = fluidGridTemplateFromColumns(tableColumns);
+
+const tableCellTextSx = {
+  fontSize: 10,
+  color: "#111827",
+  lineHeight: 1.35,
+  wordBreak: "break-word",
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
+  width: "100%",
+  textAlign: "center",
+};
+
+const tableHeaderTextSx = {
+  fontSize: 9,
+  fontWeight: 600,
+  color: "#FFFFFF",
+  lineHeight: 1.25,
+  wordBreak: "break-word",
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
+  width: "100%",
+};
+
+const tableCellBoxSx = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  px: 0.75,
+  py: 0.65,
+  minWidth: 0,
+  overflow: "hidden",
+  textAlign: "center",
+};
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Booking" },
@@ -301,72 +339,6 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     return `https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${code}.png`;
   };
 
-  const mapBookingToTableRow = (booking) => {
-    const firstTraveller = booking?.travellers?.[0] || {};
-    const customerName = firstTraveller.firstName && firstTraveller.lastName
-      ? `${firstTraveller.firstName} ${firstTraveller.lastName}`
-      : "-";
-    
-    const route = booking?.godeparture && booking?.goarrival
-      ? `${booking.godeparture} → ${booking.goarrival}`
-      : "-";
-    
-    const tripType = booking?.triptype 
-      ? booking.triptype.charAt(0).toUpperCase() + booking.triptype.slice(1)
-      : "-";
-    
-    const pnr = booking?.gdsPNR || booking?.airlinePNR || "-";
-    
-    const bookingTime = booking?.bookingDateTime
-      ? new Date(booking.bookingDateTime).toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "-";
-    
-    const lastTicketTime = booking?.lastTicketTime
-      ? new Date(booking.lastTicketTime).toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "-";
-    
-    const grossFare = booking?.netPrice || 0;
-    const ticketFare = booking?.agentFare || 0;
-    const grossFareNum = parseFloat(grossFare) || 0;
-    const ticketFareNum = parseFloat(ticketFare) || 0;
-    const dueAmount = 0;
-    const currencyCode = booking?.farecurrency || currency || "BDT";
-    
-    const paxCount = booking?.travellers?.length || booking?.segment || 0;
-    
-    const formattedDueAmount = isNaN(dueAmount) ? "0.00" : Math.abs(dueAmount).toFixed(2);
-    
-    return {
-      bookingId: booking?.bookingId || "-",
-      customer: customerName,
-      route: route,
-      type: tripType,
-      pnr: pnr,
-      bookingTime: bookingTime,
-      dueAmount: `${currencyCode} ${formattedDueAmount}`,
-      grossFare: `${currencyCode} ${isNaN(grossFareNum) ? "0.00" : grossFareNum.toFixed(2)}`,
-      ticketFare: `${currencyCode} ${isNaN(ticketFareNum) ? "0.00" : ticketFareNum.toFixed(2)}`,
-      pax: paxCount,
-      airline: booking?.careerName || booking?.career || "-",
-      carrierCode: booking?.careerCode || booking?.career || booking?.careerName?.substring(0, 2).toUpperCase() || "",
-      flightDate: booking?.godepartureDate || "-",
-      lastTicketTime: lastTicketTime,
-      status: booking?.status || "-",
-    };
-  };
-
   const handleBookingIdClick = (bookingId) => {
     if (bookingId && bookingId !== "-") {
       const adminEmail = user?.email || "";
@@ -387,7 +359,10 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     const statusLower = statusValue.toLowerCase().trim();
     
     if (statusLower.includes("expired") || statusLower === "booking expired") {
-      return { bg: "#000000", color: "#FFFFFF" };
+      return { bg: "#1F2937", color: "#FFFFFF" };
+    }
+    if (statusLower.includes("issue") && statusLower.includes("cancel")) {
+      return { bg: "#DBEAFE", color: "#1E40AF" };
     }
     if (statusLower.includes("cancelled") || statusLower === "booking cancelled" || statusLower === "cancelled") {
       return { bg: "#FEF3C7", color: "#92400E" };
@@ -431,23 +406,26 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           sx={{
             fontSize: 10,
             fontWeight: 600,
-            color: "#111827",
-            backgroundColor: "#EEF2F6",
-            borderRadius: 0.8,
-            px: 0.75,
-            py: 0.25,
-            maxWidth: "100%",
-            minWidth: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            display: "block",
+            color: "var(--primary-dark, #024DAF)",
+            wordBreak: "break-all",
+            whiteSpace: "normal",
+            textAlign: "center",
+            width: "100%",
             cursor: bookingId && bookingId !== "-" ? "pointer" : "default",
+            textDecoration: bookingId && bookingId !== "-" ? "underline" : "none",
             "&:hover": {
-              backgroundColor: bookingId && bookingId !== "-" ? "#D1D5DB" : "#EEF2F6",
+              opacity: bookingId && bookingId !== "-" ? 0.8 : 1,
             },
           }}
         >
+          {value}
+        </Typography>
+      );
+    }
+
+    if (columnKey === "customer") {
+      return (
+        <Typography sx={{ ...tableCellTextSx, fontWeight: 600, textAlign: "left" }}>
           {value}
         </Typography>
       );
@@ -474,12 +452,11 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
             borderRadius: 0.8,
             px: 1,
             py: 0.3,
-            maxWidth: "100%",
-            minWidth: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            whiteSpace: "normal",
+            wordBreak: "break-word",
             textTransform: "capitalize",
+            display: "inline-block",
+            width: "100%",
           }}
         >
           {capitalizedStatus}
@@ -488,38 +465,32 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     }
 
     if (columnKey === "airline") {
+      const airlineCode = carrierCode || getCarrierCodeFromName(value || "");
       const airlineName = value || "";
-      const airlineCode = carrierCode || getCarrierCodeFromName(airlineName);
       const logoUrl = airlineCode 
         ? `https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${airlineCode.toUpperCase()}.png`
         : getAirlineLogoUrl(airlineName);
       const fallbackText = airlineCode || (airlineName ? airlineName.substring(0, 2).toUpperCase() : "-");
       const hasLogoError = logoErrors[airlineCode] || false;
 
-      const capitalizeAirline = (name) => {
-        if (!name || name === "-") return name;
-        return name
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(" ");
-      };
-      const capitalizedAirline = capitalizeAirline(airlineName);
+      const displayCode = airlineCode || airlineName;
 
       return (
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: 0.5,
-            minWidth: 0,
             width: "100%",
+            minWidth: 0,
           }}
         >
           {logoUrl && airlineCode && !hasLogoError ? (
             <Box
               component="img"
               src={logoUrl}
-              alt={capitalizedAirline || "Airline"}
+              alt={displayCode || "Airline"}
               onError={() => {
                 if (airlineCode) {
                   setLogoErrors((prev) => ({ ...prev, [airlineCode]: true }));
@@ -554,45 +525,25 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           <Typography
             sx={{
               fontSize: 10,
+              fontWeight: 700,
               color: "#111827",
-              whiteSpace: "nowrap",
-              textTransform: "capitalize",
               lineHeight: 1.2,
-              minWidth: 0,
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
           >
-            {capitalizedAirline}
+            {displayCode}
           </Typography>
         </Box>
       );
     }
 
-    return (
-      <Typography
-        sx={{
-          fontSize: 10,
-          color: "#111827",
-          lineHeight: 1.25,
-          minWidth: 0,
-          width: "100%",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {value}
-      </Typography>
-    );
+    return <Typography sx={tableCellTextSx}>{value}</Typography>;
   };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        px: { xs: 2, md: 1 },
+        px: { xs: 1, md: 0.5 },
         py: 4,
       }}
     >
@@ -621,7 +572,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           backgroundColor: "#FFFFFF",
           borderRadius: 1,
           border: "1px solid #E5E7EB",
-          px: { xs: 2, md: 1.5 },
+          px: { xs: 1, md: 1 },
           py: { xs: 2.5, md: 2 },
           display: "flex",
           flexDirection: "column",
@@ -904,30 +855,13 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                 <Box
                   key={column.key}
                   sx={{
-                    display: "flex",
+                    ...tableCellBoxSx,
                     alignItems: "center",
-                    px: 1.25,
-                    py: 0.5,
                     borderBottom: "1px solid rgba(255, 255, 255, 0.18)",
                     backgroundColor: "transparent",
-                    minWidth: 0,
-                    overflow: "hidden",
                   }}
                 >
-                  <Typography
-                    sx={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: "#FFFFFF",
-                      lineHeight: 1.2,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      width: "100%",
-                    }}
-                  >
-                    {column.label}
-                  </Typography>
+                  <Typography sx={tableHeaderTextSx}>{column.label}</Typography>
                 </Box>
               ))}
             </Box>
@@ -945,7 +879,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
               </Box>
             ) : (
               bookings.map((booking, index) => {
-                const row = mapBookingToTableRow(booking);
+                const row = mapBookingToTableRow(booking, currency);
                 return (
                   <Box
                     key={`${booking.bookingId || booking.id || index}-${index}`}
@@ -964,13 +898,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                         <Box
                           key={`${booking.bookingId || booking.id || index}-${column.key}`}
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            px: 1.25,
-                            py: 0.65,
+                            ...tableCellBoxSx,
                             borderBottom: "1px solid #E5E7EB",
-                            minWidth: 0,
-                            overflow: "hidden",
                           }}
                         >
                           {renderCell(column.key, value, originalBookingId, carrierCode, booking)}
@@ -1155,21 +1084,19 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Trip Type</Typography>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedBooking.triptype ? selectedBooking.triptype.charAt(0).toUpperCase() + selectedBooking.triptype.slice(1) : "-"}
+                      {formatTripTypeLabel(selectedBooking.triptype)}
                     </Typography>
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Route</Typography>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedBooking.godeparture && selectedBooking.goarrival
-                        ? `${selectedBooking.godeparture} → ${selectedBooking.goarrival}`
-                        : "-"}
+                      {resolveBookingRoute(selectedBooking)}
                     </Typography>
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Flight Date</Typography>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedBooking.godepartureDate || "-"}
+                      {resolveBookingFlightDate(selectedBooking)}
                     </Typography>
                   </Box>
                   <Box>

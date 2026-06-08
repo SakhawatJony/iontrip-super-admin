@@ -25,9 +25,11 @@ import MoneyOffIcon from "@mui/icons-material/MoneyOff";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { API_BASE_URL } from "../../config/api.js";
+import { API_BASE_URL, API_ENDPOINTS } from "../../config/api.js";
+import { toast } from "react-toastify";
 import RefundQuotationDialog from "./RefundQuotationDialog.jsx";
 import RefundRejectDialog from "./RefundRejectDialog.jsx";
+import RefundApproveDialog from "./RefundApproveDialog.jsx";
 import axios from "axios";
 import Swal from "sweetalert2";
 import BookingQueInfoSection from "./BookingQueInfoSection";
@@ -43,6 +45,9 @@ import {
   resolveBookingAgentEmail,
   formatBqNumber,
   isRefundRequestStatus,
+  isRefundQuotedStatus,
+  isRefundProcessingStatus,
+  isRefundedStatus,
   resolveRefundRequestId,
 } from "./bookingQueUtils.js";
 
@@ -72,6 +77,9 @@ const BookingQueDetails = () => {
   const [cancelBookingLoading, setCancelBookingLoading] = useState(false);
   const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [bookingRefreshKey, setBookingRefreshKey] = useState(0);
+  const [refundTransferLoading, setRefundTransferLoading] = useState(false);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -116,7 +124,7 @@ const BookingQueDetails = () => {
     };
 
     fetchBookingDetails();
-  }, [bookingId, agentEmail, superadminToken, baseUrl]);
+  }, [bookingId, agentEmail, superadminToken, baseUrl, bookingRefreshKey]);
 
   // Fetch timeline when modal opens (dynamic from API)
   useEffect(() => {
@@ -493,6 +501,9 @@ const BookingQueDetails = () => {
   const isHold = rawStatusNorm === "HOLD" || rawStatusNorm === "BOOKED";
   const isIssueInProcess = rawStatusNorm === "ISSUEINPROCESS";
   const isRefundRequest = isRefundRequestStatus(bookingData?.status);
+  const isRefundQuoted = isRefundQuotedStatus(bookingData?.status);
+  const isRefundProcessing = isRefundProcessingStatus(bookingData?.status);
+  const isRefunded = isRefundedStatus(bookingData?.status);
 
   const refundActionBtnBaseSx = {
     textTransform: "none",
@@ -513,6 +524,68 @@ const BookingQueDetails = () => {
 
   const handleCancelRefundQuotation = () => {
     setRejectDialogOpen(true);
+  };
+
+  const handleApproveRefund = () => {
+    setApproveDialogOpen(true);
+  };
+
+  const handleRefundTransferNow = async () => {
+    const id = String(bookingData?.bookingId || bookingId || "").trim();
+    if (!id) {
+      toast.error("Booking ID is missing.");
+      return;
+    }
+    if (!superadminToken) {
+      toast.error("Authentication token missing. Please login again.");
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: "question",
+      title: "Refund Transfer Now",
+      text: "Confirm wallet transfer for this refund?",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Transfer",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: BQ.navy,
+      cancelButtonColor: "#6B7280",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+
+    setRefundTransferLoading(true);
+    try {
+      const response = await axios.patch(
+        `${baseUrl}${API_ENDPOINTS.REFUND_TRANSFER(id)}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${superadminToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const message =
+        response?.data?.message ??
+        response?.data?.data?.message ??
+        "Refund transferred to agent wallet successfully.";
+
+      toast.success(message);
+      setBookingRefreshKey((k) => k + 1);
+    } catch (err) {
+      const apiMessage =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        (Array.isArray(err?.response?.data?.errors) ? err.response.data.errors[0] : null) ??
+        err?.message ??
+        "Failed to transfer refund. Please try again.";
+
+      toast.error(apiMessage);
+    } finally {
+      setRefundTransferLoading(false);
+    }
   };
 
   return (
@@ -593,6 +666,43 @@ const BookingQueDetails = () => {
                       Cancel Refund Quotation
                     </Button>
                   </Box>
+                </Box>
+              ) : isRefundQuoted ? (
+                <Box sx={{ ...bqCardSx, p: 1.75 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleApproveRefund}
+                    sx={{
+                      ...refundActionBtnBaseSx,
+                      bgcolor: "var(--secondary-color, #024DAF)",
+                      "&:hover": {
+                        bgcolor: "var(--secondary-color, #024DAF)",
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    Approve Refund
+                  </Button>
+                </Box>
+              ) : isRefundProcessing ? (
+                <Box sx={{ ...bqCardSx, p: 1.75 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleRefundTransferNow}
+                    disabled={refundTransferLoading}
+                    sx={{
+                      ...refundActionBtnBaseSx,
+                      bgcolor: "var(--secondary-color, #024DAF)",
+                      "&:hover": {
+                        bgcolor: "var(--secondary-color, #024DAF)",
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    {refundTransferLoading ? "Transferring..." : "Refund Transfer Now"}
+                  </Button>
                 </Box>
               ) : (
                 <>
@@ -680,7 +790,7 @@ const BookingQueDetails = () => {
                       Issue with Balance
                     </Button>
                   ) : null}
-                  {!isHold && !isIssueInProcess ? (
+                  {!isHold && !isIssueInProcess && !isRefunded ? (
                     <>
                       <Button
                         fullWidth
@@ -1140,6 +1250,13 @@ const BookingQueDetails = () => {
         onClose={() => setRejectDialogOpen(false)}
         bookingId={bookingData?.bookingId || bookingId}
         token={superadminToken}
+      />
+      <RefundApproveDialog
+        open={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        bookingId={bookingData?.bookingId || bookingId}
+        token={superadminToken}
+        onSuccess={() => setBookingRefreshKey((k) => k + 1)}
       />
     </Box>
   );

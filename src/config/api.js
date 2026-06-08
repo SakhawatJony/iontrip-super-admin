@@ -38,4 +38,6 @@ export const API_ENDPOINTS = {
   BLOG_TAGS: "/blogs/admin/tags",
   REFUND_QUOTE: (id) => `/refund/admin/${id}/quote`,
   REFUND_REJECT: (id) => `/refund/admin/${id}/reject`,
+  REFUND_APPROVE: (id) => `/refund/admin/${id}/approve`,
+  REFUND_TRANSFER: (id) => `/refund/admin/${id}/transfer`,
 };
