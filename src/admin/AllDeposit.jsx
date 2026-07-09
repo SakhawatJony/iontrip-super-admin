@@ -4,7 +4,12 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import Chip from "@mui/material/Chip";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -46,8 +51,94 @@ const STATUS_OPTIONS = [
  
 ];
 
+function capitalizeStatus(statusText) {
+  if (!statusText || statusText === "-") return statusText;
+  return statusText
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatDepositDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDepositAmount(deposit) {
+  const amount = deposit?.amount ?? deposit?.convertedAmount ?? "0.00";
+  const currency = deposit?.currency || "BDT";
+  return `${currency} ${amount}`;
+}
+
+function DepositDetailField({ label, value, highlight = false }) {
+  return (
+    <Box
+      sx={{
+        p: 1.25,
+        borderRadius: "10px",
+        bgcolor: highlight ? "rgba(2, 77, 175, 0.06)" : "#F8FAFC",
+        border: "1px solid",
+        borderColor: highlight ? "rgba(2, 77, 175, 0.18)" : "#EEF2F7",
+        height: "100%",
+      }}
+    >
+      <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#64748B", mb: 0.4 }}>
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: highlight ? 15 : 14,
+          fontWeight: highlight ? 800 : 700,
+          color: highlight ? "#024DAF" : "#0F172A",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.35,
+        }}
+      >
+        {value || "-"}
+      </Typography>
+    </Box>
+  );
+}
+
+function DepositSectionHeading({ icon, title, subtitle }) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1.5 }}>
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "10px",
+          bgcolor: "rgba(2, 77, 175, 0.1)",
+          color: "#024DAF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 14, fontWeight: 800, color: "#0F2F56", lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        {subtitle ? (
+          <Typography sx={{ fontSize: 11.5, color: "#64748B", mt: 0.15 }}>{subtitle}</Typography>
+        ) : null}
+      </Box>
+    </Box>
+  );
+}
+
 const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) => {
-  const navigate = useNavigate();
   const { token, user } = useAuth();
   
   const [status, setStatus] = useState("");
@@ -302,13 +393,22 @@ const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) 
     };
   };
 
-  const handleDepositIdClick = (depositId) => {
-    if (depositId && depositId !== "-") {
-      navigate("/dashboard/depositdetails", {
-        state: {
-          depositId,
-        },
-      });
+  const handleDepositIdClick = (depositId, fullDeposit = null) => {
+    if (!depositId || depositId === "-") return;
+
+    if (fullDeposit) {
+      handleOpenDetailsModal(fullDeposit);
+      return;
+    }
+
+    const match = deposits.find(
+      (deposit) => String(deposit?.depositId || deposit?.id || "") === String(depositId),
+    );
+
+    if (match) {
+      handleOpenDetailsModal(match);
+    } else {
+      toast.error("Deposit details not found.");
     }
   };
 
@@ -404,11 +504,11 @@ const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) 
     if (columnKey === "depositId") {
       return (
         <Typography
-          onClick={() => handleDepositIdClick(depositId || value)}
+          onClick={() => handleDepositIdClick(depositId || value, fullDeposit)}
           sx={{
             fontSize: 11,
             fontWeight: 600,
-            color: "#111827",
+            color: "var(--primary-dark, #024DAF)",
             backgroundColor: "#EEF2F6",
             borderRadius: 0.8,
             px: 1,
@@ -416,6 +516,7 @@ const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) 
             width: "fit-content",
             whiteSpace: "nowrap",
             cursor: depositId && depositId !== "-" ? "pointer" : "default",
+            textDecoration: depositId && depositId !== "-" ? "underline" : "none",
             "&:hover": {
               backgroundColor: depositId && depositId !== "-" ? "#D1D5DB" : "#EEF2F6",
             },
@@ -490,26 +591,24 @@ const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) 
     if (columnKey === "attachment") {
       if (value && value !== "-" && value !== null) {
         return (
-          <Button
-            variant="outlined"
+          <IconButton
             size="small"
             onClick={() => handleOpenModal(value)}
+            aria-label="View attachment"
             sx={{
-              textTransform: "none",
-              fontSize: 10,
-              fontWeight: 600,
-              px: 1.5,
-              py: 0.5,
-              borderColor: "#0F2F56",
-              color: "#0F2F56",
+              width: 32,
+              height: 32,
+              border: "1px solid #E2E8F0",
+              borderRadius: 1,
+              color: "#024DAF",
               "&:hover": {
-                borderColor: "#0B2442",
-                backgroundColor: "#F0F4F8",
+                bgcolor: "rgba(2, 77, 175, 0.08)",
+                borderColor: "#024DAF",
               },
             }}
           >
-            View
-          </Button>
+            <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         );
       }
       return (
@@ -1075,388 +1174,373 @@ const AllDeposit = ({ title = "Deposit History", buttonLabel = "All Deposit" }) 
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          p: 2,
+          backdropFilter: "blur(2px)",
         }}
       >
         <Box
           sx={{
             position: "relative",
-            maxWidth: "800px",
+            width: "100%",
+            maxWidth: 760,
             maxHeight: "90vh",
-            bgcolor: "white",
-            borderRadius: 2,
-            p: 3,
+            bgcolor: "#fff",
+            borderRadius: "16px",
             outline: "none",
-            overflowY: "auto",
+            overflow: "hidden",
+            boxShadow: "0 24px 60px rgba(15, 47, 86, 0.22)",
+            border: "1px solid #E2E8F0",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <IconButton
-            onClick={handleCloseDetailsModal}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              bgcolor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              "&:hover": {
-                bgcolor: "rgba(0, 0, 0, 0.7)",
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-
-          {selectedDeposit && (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: "#0F172A" }}>
-                Deposit Details
-              </Typography>
-
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Deposit ID</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.depositId || "-"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Status</Typography>
-                    {(() => {
-                      const statusColors = getStatusColors(selectedDeposit.status);
-                      const capitalizeStatus = (statusText) => {
-                        if (!statusText || statusText === "-") return statusText;
-                        return statusText
-                          .split(" ")
-                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                          .join(" ");
-                      };
-                      const capitalizedStatus = capitalizeStatus(selectedDeposit.status);
-                      return (
-                        <Typography
-                          sx={{
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: statusColors.color,
-                            backgroundColor: statusColors.bg,
-                            borderRadius: 0.8,
-                            px: 1.5,
-                            py: 0.5,
-                            width: "fit-content",
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {capitalizedStatus}
-                        </Typography>
-                      );
-                    })()}
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Amount</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.currency} {selectedDeposit.amount || "0.00"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Currency</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.currency || "-"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Payment Method</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.paymentMethod || "-"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Deposit Type</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.depositType || "-"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Transaction ID</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.transectionId || "N/A"}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Deposit Date</Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                      {selectedDeposit.createdDate
-                        ? new Date(selectedDeposit.createdDate).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </Typography>
-                  </Box>
-                  {selectedDeposit.convertedAmount && (
-                    <Box>
-                      <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Converted Amount</Typography>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {selectedDeposit.convertedAmount || "0.00"}
-                      </Typography>
+          {selectedDeposit ? (
+            <>
+              <Box
+                sx={{
+                  px: 2.5,
+                  py: 2.25,
+                  background: "linear-gradient(135deg, #024DAF 0%, #0F2F56 100%)",
+                  color: "#fff",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: -36,
+                    right: 48,
+                    width: 140,
+                    height: 140,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(255,255,255,0.07)",
+                  }}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 1.5,
+                    mb: 1.5,
+                    position: "relative",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "12px",
+                        bgcolor: "rgba(255,255,255,0.16)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <AccountBalanceWalletOutlinedIcon sx={{ fontSize: 22, color: "#fff" }} />
                     </Box>
-                  )}
-                  {selectedDeposit.conversionRate && (
-                    <Box>
-                      <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Conversion Rate</Typography>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {selectedDeposit.conversionRate || "-"}
-                      </Typography>
-                    </Box>
-                  )}
-                  {selectedDeposit.updatedAmount && (
-                    <Box>
-                      <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Updated Amount</Typography>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {selectedDeposit.updatedAmount || "-"}
-                      </Typography>
-                    </Box>
-                  )}
-                  {selectedDeposit.previousAmount && (
-                    <Box>
-                      <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Previous Amount</Typography>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                        {selectedDeposit.previousAmount || "-"}
-                      </Typography>
-                    </Box>
-                  )}
+                    <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2 }}>
+                      Deposit Details
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    onClick={handleCloseDetailsModal}
+                    aria-label="Close"
+                    sx={{
+                      color: "#fff",
+                      bgcolor: "rgba(255,255,255,0.14)",
+                      flexShrink: 0,
+                      "&:hover": { bgcolor: "rgba(255,255,255,0.24)" },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
                 </Box>
 
-                {/* Agent Information */}
-                {selectedDeposit.agent && (
-                  <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid #E5E7EB" }}>
-                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: "#0F172A" }}>
-                      Agent Information
-                    </Typography>
-                    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Agent Name</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.agent.name || "-"}
-                        </Typography>
+                <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1.3, position: "relative" }}>
+                  {selectedDeposit.depositId || "-"}
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                    mt: 1.25,
+                    position: "relative",
+                  }}
+                >
+                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.95)" }}>
+                    {formatDepositAmount(selectedDeposit)}
+                  </Typography>
+                  {selectedDeposit.status ? (
+                    <Chip
+                      label={capitalizeStatus(selectedDeposit.status)}
+                      size="small"
+                      sx={{
+                        height: 26,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        bgcolor: getStatusColors(selectedDeposit.status).bg,
+                        color: getStatusColors(selectedDeposit.status).color,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                      }}
+                    />
+                  ) : null}
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  p: 2.5,
+                  overflowY: "auto",
+                  bgcolor: "#FAFBFC",
+                  "&::-webkit-scrollbar": { width: 6 },
+                  "&::-webkit-scrollbar-thumb": {
+                    bgcolor: "rgba(2, 77, 175, 0.28)",
+                    borderRadius: 999,
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 1.25,
+                    mb: 2.5,
+                  }}
+                >
+                  <DepositDetailField label="Deposit ID" value={selectedDeposit.depositId} />
+                  <DepositDetailField
+                    label="Status"
+                    value={capitalizeStatus(selectedDeposit.status)}
+                  />
+                  <DepositDetailField
+                    label="Amount"
+                    value={formatDepositAmount(selectedDeposit)}
+                    highlight
+                  />
+                  <DepositDetailField label="Currency" value={selectedDeposit.currency} />
+                  <DepositDetailField label="Payment Method" value={selectedDeposit.paymentMethod} />
+                  <DepositDetailField label="Deposit Type" value={selectedDeposit.depositType} />
+                  <DepositDetailField label="Transaction ID" value={selectedDeposit.transectionId || "N/A"} />
+                  <DepositDetailField
+                    label="Deposit Date"
+                    value={formatDepositDate(selectedDeposit.createdDate)}
+                  />
+                  {selectedDeposit.convertedAmount ? (
+                    <DepositDetailField label="Converted Amount" value={selectedDeposit.convertedAmount} />
+                  ) : null}
+                  {selectedDeposit.conversionRate ? (
+                    <DepositDetailField label="Conversion Rate" value={selectedDeposit.conversionRate} />
+                  ) : null}
+                  {selectedDeposit.updatedAmount ? (
+                    <DepositDetailField label="Updated Amount" value={selectedDeposit.updatedAmount} />
+                  ) : null}
+                  {selectedDeposit.previousAmount ? (
+                    <DepositDetailField label="Previous Amount" value={selectedDeposit.previousAmount} />
+                  ) : null}
+                </Box>
+
+                {selectedDeposit.agent ? (
+                  <Box sx={{ mb: 2.5 }}>
+                    <DepositSectionHeading
+                      icon={<PersonOutlineIcon sx={{ fontSize: 18 }} />}
+                      title="Agent Information"
+                      subtitle={selectedDeposit.agent.name || selectedDeposit.agent.email || "Agent details"}
+                    />
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "12px",
+                        border: "1px solid #E2E8F0",
+                        bgcolor: "#FFFFFF",
+                        boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                          gap: 1,
+                        }}
+                      >
+                        <DepositDetailField label="Agent Name" value={selectedDeposit.agent.name} />
+                        <DepositDetailField label="Agent Email" value={selectedDeposit.agent.email} />
+                        <DepositDetailField label="Agent ID" value={selectedDeposit.agent.agentId} />
+                        <DepositDetailField label="Company Name" value={selectedDeposit.agent.companyName} />
+                        {selectedDeposit.agent.mobile ? (
+                          <DepositDetailField label="Mobile" value={selectedDeposit.agent.mobile} />
+                        ) : null}
+                        {selectedDeposit.agent.companyAddress ? (
+                          <DepositDetailField label="Company Address" value={selectedDeposit.agent.companyAddress} />
+                        ) : null}
+                        {selectedDeposit.agent.businessType ? (
+                          <DepositDetailField label="Business Type" value={selectedDeposit.agent.businessType} />
+                        ) : null}
                       </Box>
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Agent Email</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.agent.email || "-"}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Agent ID</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.agent.agentId || "-"}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Company Name</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.agent.companyName || "-"}
-                        </Typography>
-                      </Box>
-                      {selectedDeposit.agent.mobile && (
-                        <Box>
-                          <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Mobile</Typography>
-                          <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                            {selectedDeposit.agent.mobile || "-"}
-                          </Typography>
-                        </Box>
-                      )}
-                      {selectedDeposit.agent.companyAddress && (
-                        <Box>
-                          <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Company Address</Typography>
-                          <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                            {selectedDeposit.agent.companyAddress || "-"}
-                          </Typography>
-                        </Box>
-                      )}
-                      {selectedDeposit.agent.businessType && (
-                        <Box>
-                          <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Business Type</Typography>
-                          <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                            {selectedDeposit.agent.businessType || "-"}
-                          </Typography>
-                        </Box>
-                      )}
                     </Box>
                   </Box>
-                )}
+                ) : null}
 
-                {/* Additional Details */}
-                <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid #E5E7EB" }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: "#0F172A" }}>
-                    Additional Information
-                  </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    {selectedDeposit.paymentReason && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Payment Reason</Typography>
-                        <Typography sx={{ fontSize: 14, color: "#111827" }}>
-                          {selectedDeposit.paymentReason}
-                        </Typography>
+                <Box sx={{ mb: 2.5 }}>
+                  <DepositSectionHeading
+                    icon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />}
+                    title="Additional Information"
+                    subtitle="Payment notes, documents, and transfer details"
+                  />
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      border: "1px solid #E2E8F0",
+                      bgcolor: "#FFFFFF",
+                      boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      {selectedDeposit.paymentReason ? (
+                        <DepositDetailField label="Payment Reason" value={selectedDeposit.paymentReason} />
+                      ) : null}
+                      {selectedDeposit.adminNote ? (
+                        <DepositDetailField label="Admin Note" value={selectedDeposit.adminNote} />
+                      ) : null}
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                          gap: 1,
+                        }}
+                      >
+                        {selectedDeposit.chequeNumber ? (
+                          <DepositDetailField label="Cheque Number" value={selectedDeposit.chequeNumber} />
+                        ) : null}
+                        {selectedDeposit.chequeBankName ? (
+                          <DepositDetailField label="Bank Name" value={selectedDeposit.chequeBankName} />
+                        ) : null}
+                        {selectedDeposit.chequeIssueDate ? (
+                          <DepositDetailField label="Cheque Issue Date" value={selectedDeposit.chequeIssueDate} />
+                        ) : null}
+                        {selectedDeposit.depositedAccount ? (
+                          <DepositDetailField label="Deposited Account" value={selectedDeposit.depositedAccount} />
+                        ) : null}
+                        {selectedDeposit.depositedFrom ? (
+                          <DepositDetailField label="Deposited From" value={selectedDeposit.depositedFrom} />
+                        ) : null}
+                        {selectedDeposit.transferDate ? (
+                          <DepositDetailField label="Transfer Date" value={selectedDeposit.transferDate} />
+                        ) : null}
+                        {selectedDeposit.updatedDate ? (
+                          <DepositDetailField
+                            label="Last Updated"
+                            value={formatDepositDate(selectedDeposit.updatedDate)}
+                          />
+                        ) : null}
                       </Box>
-                    )}
-                    {selectedDeposit.adminNote && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Admin Note</Typography>
-                        <Typography sx={{ fontSize: 14, color: "#111827" }}>
-                          {selectedDeposit.adminNote}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.chequeNumber && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Cheque Number</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.chequeNumber}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.chequeBankName && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Bank Name</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.chequeBankName}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.chequeIssueDate && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Cheque Issue Date</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.chequeIssueDate || "-"}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.depositedAccount && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Deposited Account</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.depositedAccount || "-"}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.depositedFrom && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Deposited From</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.depositedFrom || "-"}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.transferDate && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Transfer Date</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.transferDate || "-"}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.updatedDate && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>Last Updated</Typography>
-                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                          {selectedDeposit.updatedDate
-                            ? new Date(selectedDeposit.updatedDate).toLocaleString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "-"}
-                        </Typography>
-                      </Box>
-                    )}
-                    {selectedDeposit.documentImage && (
-                      <Box>
-                        <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 1 }}>Document Image</Typography>
-                        <Box
-                          component="img"
-                          src={selectedDeposit.documentImage}
-                          alt="Document"
-                          onClick={() => handleOpenModal(selectedDeposit.documentImage)}
-                          sx={{
-                            maxWidth: "100%",
-                            maxHeight: "300px",
-                            objectFit: "contain",
-                            cursor: "pointer",
-                            borderRadius: 1,
-                            border: "1px solid #E5E7EB",
-                            "&:hover": {
-                              opacity: 0.8,
-                            },
-                          }}
-                          onError={(e) => {
-                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
-                          }}
-                        />
-                      </Box>
-                    )}
+                      {selectedDeposit.documentImage ? (
+                        <Box sx={{ mt: 0.5 }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#64748B", mb: 0.75 }}>
+                            Document Image
+                          </Typography>
+                          <Box
+                            component="img"
+                            src={selectedDeposit.documentImage}
+                            alt="Document"
+                            onClick={() => handleOpenModal(selectedDeposit.documentImage)}
+                            sx={{
+                              width: "100%",
+                              maxHeight: 280,
+                              objectFit: "contain",
+                              cursor: "pointer",
+                              borderRadius: "12px",
+                              border: "1px solid #E2E8F0",
+                              bgcolor: "#F8FAFC",
+                              "&:hover": { opacity: 0.9 },
+                            }}
+                            onError={(e) => {
+                              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
+                            }}
+                          />
+                        </Box>
+                      ) : null}
+                    </Box>
                   </Box>
                 </Box>
 
-                {/* Action Section */}
-                <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid #E5E7EB" }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: "#0F172A" }}>
-                    Actions
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 2 }}>
-                    {selectedDeposit.status?.toLowerCase() === "pending" && (
-                      <>
-                        <Button
-                          variant="contained"
-                          onClick={() => handleOpenActionDialog(selectedDeposit.depositId, "approve")}
-                          disabled={actionLoading[selectedDeposit.depositId]}
-                          sx={{
-                            textTransform: "none",
-                            fontSize: 14,
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1,
-                            backgroundColor: "#10B981",
-                            "&:hover": { backgroundColor: "#059669" },
-                            "&:disabled": { backgroundColor: "#9CA3AF" },
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="contained"
-                          onClick={() => handleOpenActionDialog(selectedDeposit.depositId, "reject")}
-                          disabled={actionLoading[selectedDeposit.depositId]}
-                          sx={{
-                            textTransform: "none",
-                            fontSize: 14,
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1,
-                            backgroundColor: "#DC2626",
-                            "&:hover": { backgroundColor: "#B91C1C" },
-                            "&:disabled": { backgroundColor: "#9CA3AF" },
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                    {(selectedDeposit.status?.toLowerCase() === "approved" || 
-                      selectedDeposit.status?.toLowerCase() === "rejected" || 
-                      selectedDeposit.status?.toLowerCase() === "cancelled") && (
-                      <Typography sx={{ fontSize: 14, color: "#6B7280", fontStyle: "italic" }}>
-                        No actions available for this status
-                      </Typography>
-                    )}
+                <Box>
+                  <DepositSectionHeading
+                    icon={<BoltOutlinedIcon sx={{ fontSize: 18 }} />}
+                    title="Actions"
+                    subtitle={
+                      selectedDeposit.status?.toLowerCase() === "pending"
+                        ? "Approve or reject this deposit"
+                        : "No pending actions"
+                    }
+                  />
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      border: "1px solid #E2E8F0",
+                      bgcolor: "#FFFFFF",
+                      boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
+                      {selectedDeposit.status?.toLowerCase() === "pending" ? (
+                        <>
+                          <Button
+                            variant="contained"
+                            onClick={() => handleOpenActionDialog(selectedDeposit.depositId, "approve")}
+                            disabled={actionLoading[selectedDeposit.depositId]}
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              px: 2.5,
+                              py: 0.85,
+                              borderRadius: "10px",
+                              backgroundColor: "#10B981",
+                              boxShadow: "none",
+                              "&:hover": { backgroundColor: "#059669" },
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="contained"
+                            onClick={() => handleOpenActionDialog(selectedDeposit.depositId, "reject")}
+                            disabled={actionLoading[selectedDeposit.depositId]}
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              px: 2.5,
+                              py: 0.85,
+                              borderRadius: "10px",
+                              backgroundColor: "#DC2626",
+                              boxShadow: "none",
+                              "&:hover": { backgroundColor: "#B91C1C" },
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <Typography sx={{ fontSize: 13, color: "#64748B", fontStyle: "italic" }}>
+                          No actions available for this status
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                 </Box>
               </Box>
-            </Box>
-          )}
+            </>
+          ) : null}
         </Box>
       </Modal>
 

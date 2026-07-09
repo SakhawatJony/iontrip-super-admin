@@ -36,11 +36,79 @@ export function getPaxTypeShort(paxType) {
   return v.slice(0, 6) || "ADULT";
 }
 
+export function resolveTravellerTitle(traveller) {
+  const title = String(traveller?.title || "").trim();
+  if (title) return title.toUpperCase();
+
+  const gender = String(traveller?.gender || "").toUpperCase();
+  if (gender === "FEMALE") return "MRS";
+  if (gender === "MALE") return "MR";
+  return "MR";
+}
+
+export function isCustomerInvoiceDocument(documentType) {
+  return [
+    "customer-invoice",
+    "customer-invoice-caab",
+    "booking-invoice",
+    "booking-invoice-caab",
+  ].includes(documentType);
+}
+
+export function isAgentInvoiceDocument(documentType) {
+  return ["agent-invoice", "agent-invoice-caab"].includes(documentType);
+}
+
+export function isETicketDocument(documentType) {
+  return documentType === "e-ticket" || documentType === "e-ticket-caab";
+}
+
+export function resolveRawAitVat(data) {
+  return parseFloat(data?.aitVat ?? data?.ait ?? data?.vat ?? 0);
+}
+
+export function resolveInvoiceAitVat(data, documentType) {
+  if (isCustomerInvoiceDocument(documentType) || isETicketDocument(documentType)) return 0;
+  return resolveRawAitVat(data);
+}
+
+export function resolveAgentCommissionAmount(data) {
+  const explicit = parseFloat(
+    data?.commission ?? data?.agentCommission ?? data?.totalCommission ?? "",
+  );
+  if (Number.isFinite(explicit) && explicit !== 0) return Math.abs(explicit);
+
+  const clientFare = parseFloat(data?.clientFare ?? data?.netPrice ?? "");
+  const agentFare = parseFloat(data?.agentFare ?? "");
+  if (Number.isFinite(clientFare) && Number.isFinite(agentFare) && clientFare > agentFare) {
+    return clientFare - agentFare;
+  }
+  return 0;
+}
+
+export function resolveInvoiceGrandTotal(data, documentType, fallback = 0) {
+  const clientFare = parseFloat(data?.clientFare ?? data?.netPrice ?? "");
+  const agentFare = parseFloat(data?.agentFare ?? "");
+
+  if (isAgentInvoiceDocument(documentType) && Number.isFinite(agentFare)) {
+    return agentFare;
+  }
+  if (
+    (isCustomerInvoiceDocument(documentType) || isETicketDocument(documentType)) &&
+    Number.isFinite(clientFare)
+  ) {
+    return clientFare;
+  }
+  return fallback;
+}
+
 export function getAirlineLogoUrl(data) {
   const seg = data?.goSegments?.[0] || data?.segments?.[0] || {};
   const code =
     seg.marketingcareer ||
     seg.marketingCarrier ||
+    data?.career ||
+    data?.careerCode ||
     data?.airlineCode ||
     data?.carrierCode ||
     "";
@@ -77,6 +145,34 @@ export function isRefundedStatus(status) {
   return normalized === "REFUNDED";
 }
 
+export function isReissueRequestStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REISSUEREQUEST" || normalized.includes("REISSUEREQUEST");
+}
+
+export function isReissueQuotedStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REISSUEQUOTED" || normalized.includes("REISSUEQUOTED");
+}
+
+export function isReissueProcessingStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REISSUEPROCESSING" || normalized.includes("REISSUEPROCESSING");
+}
+
+export function isReissuedStatus(status) {
+  const normalized = String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  return normalized === "REISSUED" || normalized.includes("REISSUED");
+}
+
 export function resolveRefundRequestId(bookingData) {
   return (
     bookingData?.refundRequestId ||
@@ -85,6 +181,50 @@ export function resolveRefundRequestId(bookingData) {
     bookingData?.refund?.id ||
     bookingData?.refund?.refundRequestId ||
     bookingData?.requestId ||
+    ""
+  );
+}
+
+export function resolveReissueRequestId(bookingData) {
+  return (
+    bookingData?.reissueRequestId ||
+    bookingData?.reissueId ||
+    bookingData?.reissueRequest?.id ||
+    bookingData?.reissue?.id ||
+    bookingData?.reissue?.reissueRequestId ||
+    ""
+  );
+}
+
+export function resolveReissueFlightBookingId(bookingData, fallbackBookingId = "") {
+  return (
+    bookingData?.bookingId ||
+    bookingData?.reissueRequest?.flightBookingId ||
+    bookingData?.reissue?.flightBookingId ||
+    bookingData?.flightBookingId ||
+    fallbackBookingId ||
+    ""
+  );
+}
+
+export function normalizeBookingStatusKey(status) {
+  return String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+}
+
+export function shouldShowBookingDeadlineTimer(status) {
+  const key = normalizeBookingStatusKey(status);
+  return key === "BOOKED" || key === "ISSUEINPROCESS" || key === "ISSUEINPROGRESS";
+}
+
+export function resolveBookingDisplayStatus(data) {
+  return (
+    data?.status ||
+    data?.bookingStatus ||
+    data?.booking?.status ||
+    data?.refundRequest?.status ||
+    data?.reissueRequest?.status ||
     ""
   );
 }

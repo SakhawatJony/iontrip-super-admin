@@ -8,13 +8,15 @@ import FlightOutlinedIcon from "@mui/icons-material/FlightOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { BQ, bqCardSx, bqLabelSx, bqValueSx, getAirlineNameFromBooking } from "./bookingQueTheme.js";
 import { BqStatusPill } from "./bookingQueUi.jsx";
-import { formatCountdownTo, getAirlineLogoUrl } from "./bookingQueUtils.js";
+import { formatCountdownTo, getAirlineLogoUrl, resolveBookingDisplayStatus, shouldShowBookingDeadlineTimer } from "./bookingQueUtils.js";
+import { getStatusStyle } from "./bookingQueDetailsTheme.js";
 import { resolveBookingGoSegments } from "../flightItineraryUtils.js";
 
 const FIELD_META = [
   { label: "Booking ID", key: "bookingId", icon: ConfirmationNumberOutlinedIcon, copyable: true },
   { label: "PNR", key: "gdsPNR", icon: TagOutlinedIcon, copyable: true },
   { label: "Airlines PNR", key: "airlinePNR", icon: FlightOutlinedIcon, copyable: true, fallback: "gdsPNR" },
+  { label: "Booking Status", key: "status", icon: InfoOutlinedIcon, copyable: false },
   { label: "Fare Type", key: "refundable", icon: InfoOutlinedIcon, copyable: false },
 ];
 
@@ -24,15 +26,15 @@ const BookingQueInfoSection = ({ data }) => {
   const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
-    if (!data?.lastTicketTime) {
+    if (!data?.lastTicketTime || !shouldShowBookingDeadlineTimer(resolveBookingDisplayStatus(data))) {
       setCountdown(null);
-      return;
+      return undefined;
     }
     const tick = () => setCountdown(formatCountdownTo(data.lastTicketTime));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [data?.lastTicketTime]);
+  }, [data?.lastTicketTime, data?.status, data?.bookingStatus]);
 
   const handleCopy = async (label, value) => {
     if (!value || value === "N/A") return;
@@ -45,10 +47,13 @@ const BookingQueInfoSection = ({ data }) => {
     }
   };
 
-  const rawStatus = (data?.status || "HOLD").toUpperCase().replace(/\s+/g, "");
-  const isHoldActive = rawStatus === "HOLD" || rawStatus === "BOOKED";
-  const isExpiredStatus =
-    ["EXPIRED", "CANCELLED", "CANCELED"].includes(rawStatus) || countdown?.expired;
+  const displayStatus = resolveBookingDisplayStatus(data);
+  const showDeadlineTimer = shouldShowBookingDeadlineTimer(displayStatus);
+  const statusStyle = getStatusStyle(displayStatus);
+  const statusLabel = String(displayStatus || "N/A")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "N/A";
   const airlineName = getAirlineNameFromBooking(data);
   const seg = resolveBookingGoSegments(data)[0] || {};
   const logoUrl =
@@ -58,6 +63,9 @@ const BookingQueInfoSection = ({ data }) => {
       : "");
 
   const getFieldValue = (field) => {
+    if (field.key === "status") {
+      return statusLabel;
+    }
     if (field.key === "airlinePNR") {
       return data?.airlinePNR || data?.gdsPNR || "N/A";
     }
@@ -121,9 +129,10 @@ const BookingQueInfoSection = ({ data }) => {
           </Box>
         </Box>
         <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
-          {isHoldActive && !isExpiredStatus ? <BqStatusPill variant="holdActive">Hold</BqStatusPill> : null}
-          {isExpiredStatus ? <BqStatusPill variant="expired">Expired</BqStatusPill> : null}
-          {data?.lastTicketTime && countdown && !countdown.expired ? (
+          <BqStatusPill color={statusStyle.color} bg={statusStyle.bg}>
+            {statusLabel}
+          </BqStatusPill>
+          {showDeadlineTimer && data?.lastTicketTime && countdown && !countdown.expired ? (
             <Box
               sx={{
                 display: "inline-flex",
@@ -142,7 +151,7 @@ const BookingQueInfoSection = ({ data }) => {
               {countdown.label}
             </Box>
           ) : null}
-          {data?.lastTicketTime && countdown?.expired && isHoldActive ? (
+          {showDeadlineTimer && data?.lastTicketTime && countdown?.expired ? (
             <BqStatusPill variant="hold">
               <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.35 }}>
                 <AccessTimeIcon sx={{ fontSize: 11 }} />

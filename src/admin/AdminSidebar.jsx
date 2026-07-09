@@ -51,6 +51,24 @@ const SUBMENU_ACTIVE_COLOR = "#FFFFFF";
 const SUBMENU_ICON_BORDER = "rgba(255, 255, 255, 0.35)";
 const SUBMENU_ICON_ACTIVE = "#7DD3FC";
 
+function normalizePathname(pathname = "") {
+  const value = String(pathname).split("?")[0].split("#")[0];
+  if (value.length > 1) return value.replace(/\/+$/, "");
+  return value;
+}
+
+function isPathActive(pathname, path, { exact = false } = {}) {
+  const current = normalizePathname(pathname);
+  const target = normalizePathname(path);
+  if (!target) return false;
+  if (exact) return current === target;
+  return current === target || current.startsWith(`${target}/`);
+}
+
+function isAnyPathActive(pathname, paths = []) {
+  return paths.some((path) => isPathActive(pathname, path));
+}
+
 const menuItem = (icon, text, options = {}, location = null, collapsed = false) => {
   const {
     dropdown = false,
@@ -64,8 +82,8 @@ const menuItem = (icon, text, options = {}, location = null, collapsed = false) 
   } = options;
 
   const isActive = path
-    ? location?.pathname === path || (end ? false : location?.pathname.startsWith(path))
-    : activePaths.some((activePath) => location?.pathname.startsWith(activePath));
+    ? isPathActive(location?.pathname, path, { exact: end })
+    : activePaths.some((activePath) => isPathActive(location?.pathname, activePath));
 
   const buttonProps = path
     ? { component: NavLink, to: path, end }
@@ -157,13 +175,15 @@ const menuItem = (icon, text, options = {}, location = null, collapsed = false) 
   );
 };
 
-const SubMenuItem = ({ text, path, location, collapsed = false }) => {
-  const isActive = location.pathname === path;
+const SubMenuItem = ({ text, path, collapsed = false }) => {
+  const location = useLocation();
+  const isActive = isPathActive(location.pathname, path, { exact: true });
 
   return (
     <Box
       component={NavLink}
       to={path}
+      end
       sx={{
         position: "relative",
         display: "flex",
@@ -277,15 +297,11 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
       setExpandedMenu("reports");
       return;
     }
-    if (location.pathname.startsWith("/dashboard/salesreport")) {
-      setExpandedMenu("reports");
-      return;
-    }
     if (location.pathname.startsWith("/dashboard/searchreport")) {
       setExpandedMenu("reports");
       return;
     }
-    if (location.pathname.startsWith("/dashboard/account") || location.pathname.startsWith("/dashboard/manage")) {
+    if (location.pathname.startsWith("/dashboard/manage") || location.pathname.startsWith("/dashboard/addblog") || location.pathname.startsWith("/dashboard/editblog")) {
       setExpandedMenu("prefs");
       return;
     }
@@ -304,14 +320,15 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
     setExpandedMenu((prev) => (prev === menuKey ? null : menuKey));
   };
 
-  const handleMainMenuClick = (menuKey, firstSubRoute) => {
+  const handleMainMenuClick = (menuKey, firstSubRoute, childRoutePrefixes = []) => {
     if (expandedMenu === menuKey) {
       setExpandedMenu(null);
       return;
     }
 
     setExpandedMenu(menuKey);
-    if (firstSubRoute && location.pathname !== firstSubRoute) {
+    const onChildRoute = isAnyPathActive(location.pathname, childRoutePrefixes);
+    if (firstSubRoute && !isPathActive(location.pathname, firstSubRoute, { exact: true }) && !onChildRoute) {
       navigate(firstSubRoute);
     }
   };
@@ -509,11 +526,12 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }, location, collapsed)}
           <Collapse in={expandedMenu === "bookings"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/flightbookings/bookinghistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Ticketed" path="/dashboard/flightbookings/ticketedhistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Cancelled" path="/dashboard/flightbookings/cancelledhistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Reissue" path="/dashboard/flightbookings/reissuehistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Refunds" path="/dashboard/flightbookings/refundshistory" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/flightbookings/bookinghistory" />
+              <SubMenuItem collapsed={collapsed} text="Issue in Process" path="/dashboard/flightbookings/issueinprocesshistory" />
+              <SubMenuItem collapsed={collapsed} text="Ticketed" path="/dashboard/flightbookings/ticketedhistory" />
+              <SubMenuItem collapsed={collapsed} text="Cancelled" path="/dashboard/flightbookings/cancelledhistory" />
+              <SubMenuItem collapsed={collapsed} text="Reissue" path="/dashboard/flightbookings/reissuehistory" />
+              <SubMenuItem collapsed={collapsed} text="Refunds" path="/dashboard/flightbookings/refundshistory" />
             </Box>
           </Collapse>
 
@@ -526,10 +544,10 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }, location, collapsed)}
           <Collapse in={expandedMenu === "hotel"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/hotel/bookinghistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Confirm" path="/dashboard/hotel/confirmhistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Refunds" path="/dashboard/hotel/refundshistory" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Cancelled" path="/dashboard/hotel/cancelledhistory" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/hotel/bookinghistory" />
+              <SubMenuItem collapsed={collapsed} text="Confirm" path="/dashboard/hotel/confirmhistory" />
+              <SubMenuItem collapsed={collapsed} text="Refunds" path="/dashboard/hotel/refundshistory" />
+              <SubMenuItem collapsed={collapsed} text="Cancelled" path="/dashboard/hotel/cancelledhistory" />
             </Box>
           </Collapse>
 
@@ -542,8 +560,8 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }, location, collapsed)}
           <Collapse in={expandedMenu === "visa"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Visa History" path="/dashboard/visa/allvisa" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Add Visa" path="/dashboard/visa/addvisa" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Visa History" path="/dashboard/visa/allvisa" />
+              <SubMenuItem collapsed={collapsed} text="Add Visa" path="/dashboard/visa/addvisa" />
             </Box>
           </Collapse>
 
@@ -556,22 +574,22 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           }, location, collapsed)}
           <Collapse in={expandedMenu === "tour"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Tour History" path="/dashboard/tour/alltour" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Add Tour" path="/dashboard/tour/addtour" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Tour History" path="/dashboard/tour/alltour" />
+              <SubMenuItem collapsed={collapsed} text="Add Tour" path="/dashboard/tour/addtour" />
             </Box>
           </Collapse>
 
           {menuItem(<AccountBalanceWalletIcon sx={{ fontSize: 22 }} />, "Credit & Wallet", {
             dropdown: true,
             isOpen: expandedMenu === "wallet",
-            onClick: () => handleMainMenuClick("wallet", "/dashboard/wallet"),
+            onClick: () => handleMainMenuClick("wallet", "/dashboard/alldeposit"),
             onToggleClick: () => handleToggle("wallet"),
-            activePaths: ["/dashboard/wallet", "/dashboard/agentdeposit", "/dashboard/alldeposit"],
+            activePaths: ["/dashboard/alldeposit", "/dashboard/agentdeposit", "/dashboard/alldeposit"],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "wallet"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Wallet Overview" path="/dashboard/wallet" location={location} />
-              <SubMenuItem collapsed={collapsed} text="All Deposit" path="/dashboard/alldeposit" location={location} />
+             
+              <SubMenuItem collapsed={collapsed} text="All Deposit" path="/dashboard/alldeposit" />
             </Box>
           </Collapse>
 
@@ -580,13 +598,12 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             isOpen: expandedMenu === "reports",
             onClick: () => handleMainMenuClick("reports", "/dashboard/ledgerreport"),
             onToggleClick: () => handleToggle("reports"),
-            activePaths: ["/dashboard/ledgerreport", "/dashboard/salesreport", "/dashboard/searchreport"],
+            activePaths: ["/dashboard/ledgerreport", "/dashboard/searchreport"],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "reports"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="Ledger Report" path="/dashboard/ledgerreport" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Sales Report" path="/dashboard/salesreport" location={location} />
-              <SubMenuItem collapsed={collapsed} text="Search Report" path="/dashboard/searchreport" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Ledger Report" path="/dashboard/ledgerreport" />
+              <SubMenuItem collapsed={collapsed} text="Search Report" path="/dashboard/searchreport" />
             </Box>
           </Collapse>
 
@@ -596,14 +613,16 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           {menuItem(<AdminPanelSettingsIcon sx={{ fontSize: 22 }} />, "Management", {
             dropdown: true,
             isOpen: expandedMenu === "settings",
-            onClick: () => handleMainMenuClick("settings", "/dashboard/settings/alladmin"),
+            onClick: () => handleMainMenuClick("settings", "/dashboard/settings/alladmin", ["/dashboard/settings"]),
             onToggleClick: () => handleToggle("settings"),
             activePaths: ["/dashboard/settings"],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "settings"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
-              <SubMenuItem collapsed={collapsed} text="All Admin" path="/dashboard/settings/alladmin" location={location} />
-              <SubMenuItem collapsed={collapsed} text="All Bank" path="/dashboard/settings/allbank" location={location} />
+              <SubMenuItem collapsed={collapsed} text="All Admin" path="/dashboard/settings/alladmin" />
+              <SubMenuItem collapsed={collapsed} text="All Bank" path="/dashboard/settings/allbank" />
+              <SubMenuItem collapsed={collapsed} text="Airline Commission" path="/dashboard/settings/airlinecommission" />
+              <SubMenuItem collapsed={collapsed} text="Assign People" path="/dashboard/settings/assignpeople" />
             </Box>
           </Collapse>
 
@@ -614,15 +633,23 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           {menuItem(<SettingsIcon sx={{ fontSize: 22 }} />, "Settings", {
             dropdown: true,
             isOpen: expandedMenu === "prefs",
-            onClick: () => handleMainMenuClick("prefs", "/dashboard/account"),
+            onClick: () => handleMainMenuClick("prefs", "/dashboard/manage/website", [
+              "/dashboard/manage",
+              "/dashboard/addblog",
+              "/dashboard/editblog",
+            ]),
             onToggleClick: () => handleToggle("prefs"),
-            activePaths: ["/dashboard/account", "/dashboard/manage"],
+            activePaths: [
+              "/dashboard/manage",
+              "/dashboard/addblog",
+              "/dashboard/editblog",
+            ],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "prefs"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
               
-              <SubMenuItem collapsed={collapsed} text="Manage Website" path="/dashboard/manage/website" location={location} />
-              <SubMenuItem collapsed={collapsed} text="All Blog" path="/dashboard/manage/allblog" location={location} />
+              <SubMenuItem collapsed={collapsed} text="Manage Website" path="/dashboard/manage/website" />
+              <SubMenuItem collapsed={collapsed} text="All Blog" path="/dashboard/manage/allblog" />
             </Box>
           </Collapse>
 
@@ -632,79 +659,6 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
         </List>
       </Box>
 
-      {!collapsed && (
-        <Box sx={{ px: 1.5, py: 1.5, flexShrink: 0, display: "flex", flexDirection: "column", gap: 1 }}>
-          <Box
-            sx={{
-              borderRadius: "12px",
-              bgcolor: SIDEBAR_CARD_BG,
-              border: `1px solid ${SIDEBAR_BORDER}`,
-              p: 1.5,
-            }}
-          >
-            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", mb: 1 }}>Business Overview</Typography>
-            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>
-                  IONTRIP B2B Platform
-                </Typography>
-                <Typography sx={{ fontSize: 10, color: "rgba(255,255,255,0.55)", mt: 0.35, lineHeight: 1.4 }}>
-                  Super Admin Control Center
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                  bgcolor: "rgba(255,255,255,0.15)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                }}
-              >
-                <AnchorIcon sx={{ fontSize: 20, color: BRAND_B2B }} />
-              </Box>
-            </Box>
-            <Button
-              fullWidth
-              size="small"
-              sx={{
-                textTransform: "none",
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: "8px",
-                bgcolor: "rgba(0, 0, 0, 0.28)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.1)",
-                py: 0.85,
-                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.38)" },
-              }}
-            >
-              View System Health
-            </Button>
-          </Box>
-
-          <Box
-            sx={{
-              borderRadius: "12px",
-              bgcolor: SIDEBAR_CARD_BG,
-              border: `1px solid ${SIDEBAR_BORDER}`,
-              p: 1.5,
-            }}
-          >
-            <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#fff", mb: 1 }}>System Status</Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#22C55E", flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#4ADE80" }}>
-                All Systems Operational
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 };

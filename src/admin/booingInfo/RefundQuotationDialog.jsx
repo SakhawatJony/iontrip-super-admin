@@ -12,6 +12,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import { API_BASE_URL, API_ENDPOINTS } from "../../config/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { BQ } from "./bookingQueTheme.js";
 
 const inputSx = {
@@ -32,9 +33,13 @@ export default function RefundQuotationDialog({
   defaultQuotedAmount = "",
   onSuccess,
 }) {
+  const { token: authToken } = useAuth();
   const [quotedAmount, setQuotedAmount] = useState("");
   const [adminNote, setAdminNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const resolveToken = () =>
+    token || authToken || (typeof localStorage !== "undefined" ? localStorage.getItem("adminToken") : "") || "";
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +60,8 @@ export default function RefundQuotationDialog({
       toast.error("Booking ID is missing.");
       return;
     }
-    if (!token) {
+    const bearerToken = resolveToken();
+    if (!bearerToken) {
       toast.error("Authentication token missing. Please login again.");
       return;
     }
@@ -78,7 +84,7 @@ export default function RefundQuotationDialog({
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
         },

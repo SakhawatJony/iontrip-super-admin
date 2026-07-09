@@ -4,6 +4,7 @@ import {
   resolveBookingBackSegments,
   resolveBookingGoSegments,
 } from "../flightItineraryUtils";
+import { resolveTravellerTitle } from "./bookingQueUtils.js";
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -28,10 +29,7 @@ const formatTime = (dateString) => {
   }
 };
 
-const getTitle = (gender) => {
-  if (!gender) return "MR";
-  return gender === "MALE" ? "MR" : gender === "FEMALE" ? "MRS" : "MR";
-};
+const getTitle = (traveller) => resolveTravellerTitle(traveller);
 
 const formatNumber = (num) => {
   if (!num && num !== 0) return "0.00";
@@ -151,7 +149,7 @@ const BookingQueInvoiceDetails = ({
           <TableBody>
             {travellers.map((pax, idx) => (
               <TableRow key={idx}>
-                <TableCell sx={{ fontSize: 11 }}>{getTitle(pax.gender)} {pax.firstName || ""} {pax.lastName || ""}</TableCell>
+                <TableCell sx={{ fontSize: 11 }}>{getTitle(pax)} {pax.firstName || ""} {pax.lastName || ""}</TableCell>
                 <TableCell sx={{ fontSize: 11 }}>{pricebreakdown[idx]?.PaxType || "ADULT"}</TableCell>
                 <TableCell sx={{ fontSize: 11 }}>{pax.passportNumber || "N/A"}</TableCell>
                 <TableCell sx={{ fontSize: 11 }}>{data?.airlinePNR || data?.gdsPNR || "N/A"}</TableCell>

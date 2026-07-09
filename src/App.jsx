@@ -14,7 +14,10 @@ import AllAgent from "./admin/AllAgent.jsx";
 import AllAdmin from "./admin/AllAdmin.jsx";
 import AddAdmin from "./admin/AddAdmin.jsx";
 import AllBank from "./admin/AllBank.jsx";
+import AllAirlineCommission from "./admin/AllAirlineCommission.jsx";
+import AllAssignPeople from "./admin/AllAssignPeople.jsx";
 import LedgerReport from "./admin/LedgerReport.jsx";
+import SearchReport from "./admin/SearchReport.jsx";
 import BookingQueDetails from "./admin/booingInfo/BookingQueDetails.jsx";
 import BookingQueRefund from "./admin/booingInfo/BookingQueRefund.jsx";
 import BookingQueInvoice from "./admin/booingInfo/BookingQueInvoice.jsx";
@@ -57,24 +60,28 @@ export default function App() {
               <Route index element={<Navigate to="bookinghistory" replace />} />
               <Route
                 path="bookinghistory"
-                element={<AllFlightBooking title="All Booking" buttonLabel="All Booking" defaultStatus="" />}
+                element={<AllFlightBooking key="bookinghistory" title="All Booking" buttonLabel="All Booking" defaultStatus="" />}
               />
               <Route path="addflightbooking" element={<AddFlightBooking />} />
               <Route
                 path="ticketedhistory"
-                element={<AllFlightBooking title="Ticketed History" buttonLabel="Ticketed" defaultStatus="ticketed" />}
+                element={<AllFlightBooking key="ticketedhistory" title="Ticketed History" buttonLabel="Ticketed" defaultStatus="ticketed" />}
+              />
+              <Route
+                path="issueinprocesshistory"
+                element={<AllFlightBooking key="issueinprocesshistory" title="Issue in Process History" buttonLabel="Issue in Process" defaultStatus="issueinprocess" />}
               />
               <Route
                 path="cancelledhistory"
-                element={<AllFlightBooking title="Cancelled History" buttonLabel="Cancelled" defaultStatus="cancelled" />}
+                element={<AllFlightBooking key="cancelledhistory" title="Cancelled History" buttonLabel="Cancelled" defaultStatus="cancelled" />}
               />
               <Route
                 path="reissuehistory"
-                element={<AllFlightBooking title="Reissue History" buttonLabel="Reissue" defaultStatus="reissue" />}
+                element={<AllFlightBooking key="reissuehistory" title="Reissue History" buttonLabel="Reissue" defaultStatus="reissue" />}
               />
               <Route
                 path="refundshistory"
-                element={<AllFlightBooking title="Refunds History" buttonLabel="Refunds" defaultStatus="refund" />}
+                element={<AllFlightBooking key="refundshistory" title="Refunds History" buttonLabel="Refunds" defaultStatus="refund" />}
               />
               <Route path="flightinfo" element={<FlightInfo />} />
               <Route path="reschedulepax" element={<ReschedulePax />} />
@@ -90,7 +97,10 @@ export default function App() {
             <Route path="settings/alladmin" element={<AllAdmin />} />
             <Route path="settings/addadmin" element={<AddAdmin />} />
             <Route path="settings/allbank" element={<AllBank />} />
+            <Route path="settings/airlinecommission" element={<AllAirlineCommission />} />
+            <Route path="settings/assignpeople" element={<AllAssignPeople />} />
             <Route path="ledgerreport" element={<LedgerReport />} />
+            <Route path="searchreport" element={<SearchReport />} />
             <Route path="wallet" element={<WalletOverview />} />
             <Route path="account" element={<AccountProfile title="Profile" />} />
             <Route path="account/alltraveler" element={<AccountProfile title="All Traveler" />} />

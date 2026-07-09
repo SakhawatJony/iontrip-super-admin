@@ -1,67 +1,317 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Autocomplete,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
-  Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   MenuItem,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
-import PaymentsIcon from "@mui/icons-material/Payments";
-import DescriptionIcon from "@mui/icons-material/Description";
-import AddIcon from "@mui/icons-material/Add";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import PublicIcon from "@mui/icons-material/Public";
-import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
-import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import LuggageOutlinedIcon from "@mui/icons-material/LuggageOutlined";
+import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutline";
+import FlightOutlinedIcon from "@mui/icons-material/FlightOutlined";
+import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
+import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
+import FlashOnOutlinedIcon from "@mui/icons-material/FlashOnOutlined";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
-const VISA_CATEGORIES = ["Tourist", "Business", "Student", "Work", "Transit", "Medical", "Other"];
-const VISA_TYPES = ["Single-entry", "Double-entry", "Multiple-entry"];
-const ENTRY_TYPES = ["Consulate", "E-Visa", "Visa on Arrival", "Embassy", "Online"];
-const INTERVIEW_OPTIONS = ["Mandatory", "Optional", "Not Required", "Waived"];
+const VISA_TYPE_OPTIONS = [
+  { value: "Tourist Visa", label: "Tourist Visa", icon: LuggageOutlinedIcon },
+  { value: "Business Visa", label: "Business Visa", icon: BusinessCenterOutlinedIcon },
+  { value: "Student Visa", label: "Student Visa", icon: SchoolOutlinedIcon },
+  { value: "Work Visa", label: "Work Visa", icon: WorkOutlineOutlinedIcon },
+  { value: "Transit Visa", label: "Transit Visa", icon: FlightOutlinedIcon },
+  { value: "Medical Visa", label: "Medical Visa", icon: MedicalServicesOutlinedIcon },
+];
 
-const emptyDurationCost = () => ({
-  cost: "",
-  entry: "",
-  duration: "",
-  maximumStay: "",
-  processingTime: "",
-  interview: "",
-  embassyFee: "",
-  agentFee: "",
-  serviceCharge: "",
-  processingFee: "",
-});
-
-const emptyDocuments = () => ({
-  profession: "",
-  exceptionalCase: "",
-  note: "",
-});
-
-const DOCUMENT_ACCEPT = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp";
-const MAX_DOCUMENT_SIZE_MB = 10;
-const MAX_DOCUMENT_BYTES = MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
-
-function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function getVisaTypeOption(value) {
+  return VISA_TYPE_OPTIONS.find((option) => option.value === value) || null;
 }
 
-function showApiErrorToasts(err, fallback = "Failed to create visa.") {
+function normalizeVisaTypeValue(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = getVisaTypeOption(text);
+  if (direct) return direct.value;
+  const loose = VISA_TYPE_OPTIONS.find(
+    (option) => option.label.toLowerCase() === text.toLowerCase()
+      || option.value.replace(" Visa", "").toLowerCase() === text.toLowerCase(),
+  );
+  return loose?.value || text;
+}
+
+const ENTRY_TYPE_OPTIONS = [
+  { value: "Single Entry", label: "Single Entry", iconKey: "single" },
+  { value: "Double Entry", label: "Double Entry", iconKey: "double" },
+  { value: "Multiple Entry", label: "Multiple Entry", iconKey: "multiple" },
+];
+
+function getEntryTypeOption(value) {
+  return ENTRY_TYPE_OPTIONS.find((option) => option.value === value) || null;
+}
+
+function normalizeEntryTypeValue(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const direct = getEntryTypeOption(text);
+  if (direct) return direct.value;
+  const compact = text.toLowerCase().replace(/[\s-]+/g, "");
+  const loose = ENTRY_TYPE_OPTIONS.find((option) => {
+    const optionCompact = option.value.toLowerCase().replace(/[\s-]+/g, "");
+    return optionCompact === compact || option.label.toLowerCase() === text.toLowerCase();
+  });
+  return loose?.value || text;
+}
+
+function EntryTypeIcon({ iconKey }) {
+  if (iconKey === "multiple") {
+    return <AllInclusiveIcon sx={{ fontSize: 20, color: C.muted }} />;
+  }
+
+  return (
+    <Box
+      sx={{
+        width: 22,
+        height: 22,
+        borderRadius: 0.75,
+        border: `1.5px solid ${C.muted}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.muted,
+        lineHeight: 1,
+        flexShrink: 0,
+      }}
+    >
+      {iconKey === "single" ? "1" : "2"}
+    </Box>
+  );
+}
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      borderRadius: 2,
+      mt: 0.5,
+      boxShadow: "0 10px 28px rgba(15, 47, 86, 0.14)",
+    },
+  },
+};
+
+const DURATION_DAY_OPTIONS = ["15", "30", "45", "60", "90", "180", "365"];
+
+const PROCESSING_SPEED_OPTIONS = [
+  { value: "Standard", label: "Standard", subtitle: "7-10 business days", icon: ScheduleOutlinedIcon },
+  { value: "Express", label: "Express", subtitle: "3-5 business days", icon: BoltOutlinedIcon },
+  { value: "Rush", label: "Rush", subtitle: "1-2 business days", icon: RocketLaunchOutlinedIcon },
+  { value: "Super Rush", label: "Super Rush", subtitle: "Same day processing", icon: FlashOnOutlinedIcon },
+];
+
+function normalizeDurationDays(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const digits = text.replace(/[^\d]/g, "");
+  return digits || text;
+}
+
+function getDurationLabel(days) {
+  const normalized = normalizeDurationDays(days);
+  if (!normalized) return "";
+  return `${normalized} Days`;
+}
+
+function getProcessingSpeedOption(value) {
+  return PROCESSING_SPEED_OPTIONS.find((option) => option.value === value) || null;
+}
+
+function normalizeProcessingSpeed(value) {
+  const text = String(value || "").trim();
+  if (!text) return "Standard";
+  const direct = getProcessingSpeedOption(text);
+  if (direct) return direct.value;
+  const lower = text.toLowerCase();
+  if (lower === "urgent") return "Rush";
+  const loose = PROCESSING_SPEED_OPTIONS.find(
+    (option) => option.label.toLowerCase() === lower || option.value.toLowerCase() === lower,
+  );
+  return loose?.value || text;
+}
+
+const CURRENCIES = ["BDT", "NPR", "USD", "INR", "AED", "EUR", "GBP"];
+const COUNTRIES = [
+  "Afghanistan", "Australia", "Bangladesh", "Bhutan", "Canada", "China", "France", "Germany",
+  "India", "Indonesia", "Japan", "Malaysia", "Maldives", "Nepal", "Pakistan", "Philippines",
+  "Qatar", "Saudi Arabia", "Singapore", "South Korea", "Sri Lanka", "Thailand", "Turkey",
+  "United Arab Emirates", "United Kingdom", "United States", "Vietnam",
+].sort();
+
+const TABS = [
+  { id: "general", label: "General Info", icon: InfoOutlinedIcon },
+  { id: "pricing", label: "Pricing", icon: PaymentsOutlinedIcon },
+  { id: "requirements", label: "Requirements", icon: DescriptionOutlinedIcon },
+];
+
+const emptyPricingVariant = () => ({
+  visaType: "",
+  entryType: "",
+  durationDays: "",
+  processingSpeed: "Standard",
+  visaFee: "",
+  commission: "",
+  currency: "BDT",
+});
+
+function calcVariantTotal(row) {
+  const fee = Number(row.visaFee) || 0;
+  const commission = Number(row.commission) || 0;
+  return fee + commission;
+}
+
+function formatVariantTotal(row) {
+  return calcVariantTotal(row).toFixed(2);
+}
+
+const emptyRequirement = () => "";
+
+function normalizeRequirements(raw) {
+  if (Array.isArray(raw?.requirements) && raw.requirements.length > 0) {
+    const items = raw.requirements.map((item) => String(item || "").trim()).filter(Boolean);
+    return items.length > 0 ? items : [emptyRequirement()];
+  }
+  if (Array.isArray(raw) && raw.length > 0) {
+    const items = raw
+      .map((row) => {
+        if (typeof row === "string") return row.trim();
+        return String(row?.documents || row?.requirement || row?.text || "").trim();
+      })
+      .filter(Boolean);
+    return items.length > 0 ? items : [emptyRequirement()];
+  }
+  if (raw && typeof raw === "object") {
+    const value = String(raw.documents || raw.requirement || "").trim();
+    return value ? [value] : [emptyRequirement()];
+  }
+  return [emptyRequirement()];
+}
+
+const C = {
+  pageBg: "var(--page-bg, #F4F7FE)",
+  cardBg: "#FFFFFF",
+  border: "#E2E8F0",
+  primary: "#0F2F56",
+  secondary: "#024DAF",
+  muted: "#64748B",
+  danger: "#E11D48",
+};
+
+const INPUT_HEIGHT = 30;
+
+const labelSx = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: C.primary,
+  mb: 0.5,
+  display: "block",
+};
+
+const fieldSx = {
+  "& .MuiInputBase-root": {
+    minHeight: INPUT_HEIGHT,
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 1.25,
+    fontSize: 13,
+    bgcolor: "#FAFBFC",
+    "& fieldset": { borderColor: C.border },
+    "&:hover fieldset": { borderColor: "#94A3B8" },
+    "&.Mui-focused fieldset": { borderColor: C.secondary, borderWidth: 2 },
+  },
+  "& .MuiOutlinedInput-root:not(.MuiInputBase-multiline)": {
+    height: INPUT_HEIGHT,
+    minHeight: INPUT_HEIGHT,
+  },
+  "& .MuiOutlinedInput-input:not(.MuiInputBase-inputMultiline)": {
+    py: 0,
+    px: 1.25,
+    height: INPUT_HEIGHT,
+    boxSizing: "border-box",
+    fontSize: 13,
+  },
+  "& .MuiSelect-select": {
+    minHeight: "unset !important",
+    display: "flex",
+    alignItems: "center",
+    py: 0,
+    fontSize: 13,
+  },
+  "& .MuiAutocomplete-inputRoot": {
+    minHeight: `${INPUT_HEIGHT}px !important`,
+    height: INPUT_HEIGHT,
+    py: "0 !important",
+    paddingTop: "0 !important",
+    paddingBottom: "0 !important",
+  },
+  "& .MuiAutocomplete-input": {
+    py: "0 !important",
+    fontSize: 13,
+  },
+};
+
+const multilineFieldSx = {
+  ...fieldSx,
+  "& .MuiOutlinedInput-root.MuiInputBase-multiline": {
+    height: "auto",
+    minHeight: "auto",
+  },
+  "& .MuiOutlinedInput-inputMultiline": {
+    py: 0.85,
+    fontSize: 13,
+    lineHeight: 1.45,
+  },
+};
+
+const checkboxSx = {
+  color: "#94A3B8",
+  "&.Mui-checked": { color: C.secondary },
+};
+
+const readOnlyFieldSx = {
+  ...fieldSx,
+  "& .MuiOutlinedInput-root": {
+    ...fieldSx["& .MuiOutlinedInput-root"],
+    bgcolor: "#EEF2F7",
+  },
+};
+
+function showApiErrorToasts(err, fallback = "Failed to save visa.") {
   const data = err?.response?.data;
   if (Array.isArray(data?.message) && data.message.length > 0) {
     data.message.forEach((msg) => toast.error(String(msg)));
@@ -78,7 +328,7 @@ function showApiErrorToasts(err, fallback = "Failed to create visa.") {
   toast.error(err?.message || fallback);
 }
 
-function showApiSuccessToast(response, fallback = "Visa created successfully.") {
+function showApiSuccessToast(response, fallback = "Visa saved successfully.") {
   const msg = response?.data?.message;
   if (typeof msg === "string" && msg.trim()) {
     toast.success(msg);
@@ -91,382 +341,588 @@ function showApiSuccessToast(response, fallback = "Visa created successfully.") 
   toast.success(fallback);
 }
 
-/** Matches MUI Outlined TextField height used in this form */
-const INPUT_ROW_HEIGHT = 56;
+function normalizeRequirementsFromVisa(visa) {
+  if (!visa) return [emptyRequirement()];
+  if (Array.isArray(visa.requirements) && visa.requirements.length > 0) {
+    return normalizeRequirements(visa.requirements);
+  }
+  return normalizeRequirements(visa.visaRequiredDocuments);
+}
 
-function DocumentUploadZone({ files, onAdd, onRemove, disabled }) {
-  const inputRef = useRef(null);
-  const [dragOver, setDragOver] = useState(false);
+function normalizePricingVariants(raw) {
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((row) => ({
+      visaType: normalizeVisaTypeValue(row?.processingFee || row?.visaType || ""),
+      entryType: normalizeEntryTypeValue(row?.entry || row?.entryType || ""),
+      durationDays: normalizeDurationDays(row?.duration || row?.durationDays || ""),
+      processingSpeed: normalizeProcessingSpeed(row?.processingTime || row?.processingSpeed || "Standard"),
+      visaFee: row?.embassyFee != null && row.embassyFee !== ""
+        ? String(row.embassyFee)
+        : row?.visaFee != null
+          ? String(row.visaFee)
+          : row?.cost != null
+            ? String(row.cost)
+            : "",
+      commission: row?.agentFee != null && row.agentFee !== ""
+        ? String(row.agentFee)
+        : row?.commission != null
+          ? String(row.commission)
+          : "",
+      currency: String(row?.serviceCharge || row?.currency || "BDT").trim() || "BDT",
+    }));
+  }
+  return [emptyPricingVariant()];
+}
 
-  const validateAndAdd = (fileList) => {
-    const incoming = Array.from(fileList || []);
-    const valid = [];
-    for (const file of incoming) {
-      if (file.size > MAX_DOCUMENT_BYTES) {
-        toast.error(`"${file.name}" exceeds ${MAX_DOCUMENT_SIZE_MB} MB.`);
-        continue;
-      }
-      valid.push({ id: `${file.name}-${file.size}-${file.lastModified}`, file });
+function DurationDaysSelect({ value, onChange }) {
+  const [customDays, setCustomDays] = useState("");
+
+  useEffect(() => {
+    const normalized = normalizeDurationDays(value);
+    if (!normalized) {
+      setCustomDays("");
+      return;
     }
-    if (valid.length) onAdd(valid);
+    setCustomDays(DURATION_DAY_OPTIONS.includes(normalized) ? "" : normalized);
+  }, [value]);
+
+  const handlePresetChange = (days) => {
+    setCustomDays("");
+    onChange(days);
+  };
+
+  const handleCustomChange = (nextValue) => {
+    const digits = nextValue.replace(/\D/g, "");
+    setCustomDays(digits);
+    onChange(digits);
   };
 
   return (
-    <Box>
-      <Box
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (!disabled) setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          if (!disabled) validateAndAdd(e.dataTransfer.files);
-        }}
-        onClick={() => !disabled && inputRef.current?.click()}
+    <TextField
+      select
+      fullWidth
+      value={normalizeDurationDays(value)}
+      onChange={(e) => handlePresetChange(e.target.value)}
+      sx={fieldSx}
+      SelectProps={{
+        displayEmpty: true,
+        renderValue: (selected) => {
+          if (!selected) {
+            return (
+              <Typography sx={{ fontSize: 14, color: C.muted }}>
+                Select
+              </Typography>
+            );
+          }
+          return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarTodayOutlinedIcon sx={{ fontSize: 18, color: C.muted }} />
+              <Typography sx={{ fontSize: 14, color: C.primary, fontWeight: 500 }}>
+                {getDurationLabel(selected)}
+              </Typography>
+            </Box>
+          );
+        },
+        MenuProps: {
+          ...selectMenuProps,
+          autoFocus: false,
+        },
+      }}
+    >
+      <MenuItem value="" disabled>
+        Select
+      </MenuItem>
+      {DURATION_DAY_OPTIONS.map((days) => (
+        <MenuItem
+          key={days}
+          value={days}
+          sx={{
+            py: 1.25,
+            gap: 1.5,
+            fontSize: 14,
+            color: C.primary,
+          }}
+        >
+          <CalendarTodayOutlinedIcon sx={{ fontSize: 18, color: C.muted }} />
+          {getDurationLabel(days)}
+        </MenuItem>
+      ))}
+      <MenuItem
+        disableRipple
+        onMouseDown={(e) => e.preventDefault()}
         sx={{
-          height: INPUT_ROW_HEIGHT,
-          minHeight: INPUT_ROW_HEIGHT,
-          maxHeight: INPUT_ROW_HEIGHT,
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          py: 1,
           px: 1.5,
-          textAlign: "center",
-          border: "2px dashed",
-          borderColor: dragOver ? "#024DAF" : "#CBD5E1",
-          borderRadius: 2,
-          bgcolor: dragOver ? "#F0F7FF" : "#FAFBFC",
-          cursor: disabled ? "not-allowed" : "pointer",
-          opacity: disabled ? 0.6 : 1,
-          overflow: "hidden",
-          transition: "border-color 0.2s, background-color 0.2s",
-          "&:hover": disabled
-            ? {}
-            : {
-                borderColor: "#024DAF",
-                bgcolor: "#F8FAFF",
-              },
+          "&:hover": { bgcolor: "transparent" },
+          cursor: "default",
         }}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          hidden
-          multiple
-          accept={DOCUMENT_ACCEPT}
-          disabled={disabled}
-          onChange={(e) => {
-            validateAndAdd(e.target.files);
-            e.target.value = "";
-          }}
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Custom Days..."
+          value={customDays}
+          onChange={(e) => handleCustomChange(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          sx={fieldSx}
         />
-        <CloudUploadOutlinedIcon sx={{ fontSize: 22, color: "#024DAF", mb: 0.25 }} />
-        <Typography
-          sx={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#0F2F56",
-            lineHeight: 1.15,
-            px: 0.5,
-            maxWidth: "100%",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {files.length === 0
-            ? "Drop files here or click to browse"
-            : files.length === 1
-              ? files[0].file.name
-              : `${files.length} files selected — click to add more`}
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: 10,
-            color: "#64748B",
-            lineHeight: 1.15,
-            mt: 0.15,
-            px: 0.5,
-            maxWidth: "100%",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          PDF, Word, JPG, PNG — max {MAX_DOCUMENT_SIZE_MB} MB each
-        </Typography>
-      </Box>
-
-      {files.length > 0 ? (
-        <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
-          {files.map((item) => (
-            <Box
-              key={item.id}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                px: 1.5,
-                py: 1,
-                borderRadius: 1.5,
-                border: "1px solid #E2E8F0",
-                bgcolor: "#FFFFFF",
-              }}
-            >
-              <InsertDriveFileOutlinedIcon sx={{ color: "#024DAF", fontSize: 22 }} />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#0F172A",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.file.name}
-                </Typography>
-                <Typography sx={{ fontSize: 11, color: "#64748B" }}>
-                  {formatFileSize(item.file.size)}
-                </Typography>
-              </Box>
-              <IconButton
-                size="small"
-                disabled={disabled}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(item.id);
-                }}
-                aria-label={`Remove ${item.file.name}`}
-                sx={{ color: "#94A3B8", "&:hover": { color: "#E11D48" } }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          ))}
-        </Box>
-      ) : null}
-    </Box>
+      </MenuItem>
+    </TextField>
   );
 }
 
-const labelSx = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#0F2F56",
-  mb: 0.75,
-  display: "block",
-};
+function PricingVariantCard({ index, row, onChange, onRemove, canRemove }) {
+  const totalPrice = formatVariantTotal(row);
 
-const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    borderRadius: 1.5,
-    fontSize: 14,
-    bgcolor: "#FAFBFC",
-    "& fieldset": { borderColor: "#E2E8F0" },
-    "&:hover fieldset": { borderColor: "#94A3B8" },
-    "&.Mui-focused fieldset": { borderColor: "#024DAF", borderWidth: 2 },
-  },
-};
-
-function SectionCard({ step, icon, title, subtitle, children, accent = "#024DAF" }) {
   return (
     <Box
       sx={{
+        mb: 2,
+        border: `1px solid ${C.border}`,
         borderRadius: 2,
-        border: "1px solid #E2E8F0",
-        bgcolor: "#FFFFFF",
+        bgcolor: "#F8FAFC",
         overflow: "hidden",
-        boxShadow: "0 1px 3px rgba(15, 47, 86, 0.06)",
       }}
     >
       <Box
         sx={{
           display: "flex",
-          alignItems: "flex-start",
-          gap: 2,
-          px: { xs: 2, md: 2.5 },
-          py: 2,
-          background: `linear-gradient(90deg, ${accent}14 0%, transparent 55%)`,
-          borderBottom: "1px solid #EEF2F6",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 2,
+          pt: 2,
         }}
       >
         <Box
           sx={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            bgcolor: accent,
-            color: "#fff",
-            flexShrink: 0,
+            gap: 0.75,
+            bgcolor: "#EFF6FF",
+            border: "1px solid #BFDBFE",
+            borderRadius: 1,
+            px: 1.25,
+            py: 0.5,
           }}
         >
-          {icon}
+          <PaymentsOutlinedIcon sx={{ fontSize: 16, color: C.secondary }} />
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: C.secondary }}>
+            Variant #{index + 1}
+          </Typography>
         </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-            <Typography
-              component="span"
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: 0.6,
-                textTransform: "uppercase",
-                color: accent,
-                bgcolor: `${accent}18`,
-                px: 1,
-                py: 0.25,
-                borderRadius: 1,
+        {canRemove ? (
+          <IconButton
+            size="small"
+            onClick={onRemove}
+            aria-label={`Remove variant ${index + 1}`}
+            sx={{ color: C.muted, "&:hover": { color: C.danger } }}
+          >
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        ) : null}
+      </Box>
+
+      <Box sx={{ p: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Visa Type <span style={{ color: C.danger }}>*</span>
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              value={row.visaType}
+              onChange={(e) => onChange("visaType", e.target.value)}
+              sx={fieldSx}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (!selected) {
+                    return (
+                      <Typography sx={{ fontSize: 14, color: C.muted }}>
+                        Select
+                      </Typography>
+                    );
+                  }
+                  const option = getVisaTypeOption(selected);
+                  if (!option) return selected;
+                  const Icon = option.icon;
+                  return (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Icon sx={{ fontSize: 20, color: C.muted }} />
+                      <Typography sx={{ fontSize: 14, color: C.primary, fontWeight: 500 }}>
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  );
+                },
+                MenuProps: selectMenuProps,
               }}
             >
-              Step {step}
+              <MenuItem value="" disabled>
+                Select
+              </MenuItem>
+              {VISA_TYPE_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    sx={{
+                      py: 1.25,
+                      gap: 1.5,
+                      fontSize: 14,
+                      color: C.primary,
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 20, color: C.muted }} />
+                    {option.label}
+                  </MenuItem>
+                );
+              })}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Entry Type <span style={{ color: C.danger }}>*</span>
             </Typography>
-            <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#0F172A" }}>
-              {title}
+            <TextField
+              select
+              fullWidth
+              value={row.entryType}
+              onChange={(e) => onChange("entryType", e.target.value)}
+              sx={fieldSx}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (!selected) {
+                    return (
+                      <Typography sx={{ fontSize: 14, color: C.muted }}>
+                        Select
+                      </Typography>
+                    );
+                  }
+                  const option = getEntryTypeOption(selected);
+                  if (!option) return selected;
+                  return (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <EntryTypeIcon iconKey={option.iconKey} />
+                      <Typography sx={{ fontSize: 14, color: C.primary, fontWeight: 500 }}>
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  );
+                },
+                MenuProps: selectMenuProps,
+              }}
+            >
+              <MenuItem value="" disabled>
+                Select
+              </MenuItem>
+              {ENTRY_TYPE_OPTIONS.map((option) => (
+                <MenuItem
+                  key={option.value}
+                  value={option.value}
+                  sx={{
+                    py: 1.25,
+                    gap: 1.5,
+                    fontSize: 14,
+                    color: C.primary,
+                  }}
+                >
+                  <EntryTypeIcon iconKey={option.iconKey} />
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Duration (Days) <span style={{ color: C.danger }}>*</span>
             </Typography>
-          </Box>
-          {subtitle ? (
-            <Typography sx={{ fontSize: 13, color: "#64748B", mt: 0.5 }}>{subtitle}</Typography>
-          ) : null}
-        </Box>
+            <DurationDaysSelect
+              value={row.durationDays}
+              onChange={(days) => onChange("durationDays", days)}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Processing speed <span style={{ color: C.danger }}>*</span>
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              value={row.processingSpeed}
+              onChange={(e) => onChange("processingSpeed", e.target.value)}
+              sx={fieldSx}
+              SelectProps={{
+                renderValue: (selected) => {
+                  const option = getProcessingSpeedOption(selected);
+                  if (!option) return selected;
+                  const Icon = option.icon;
+                  return (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Icon sx={{ fontSize: 18, color: C.muted }} />
+                      <Typography sx={{ fontSize: 14, color: C.primary, fontWeight: 500 }}>
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  );
+                },
+                MenuProps: selectMenuProps,
+              }}
+            >
+              {PROCESSING_SPEED_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    sx={{
+                      py: 1.25,
+                      alignItems: "flex-start",
+                      gap: 1.25,
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 18, color: C.muted, mt: 0.25 }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary, lineHeight: 1.3 }}>
+                        {option.label}
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: C.muted, lineHeight: 1.3 }}>
+                        {option.subtitle}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                );
+              })}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>Visa Fee</Typography>
+            <TextField
+              fullWidth
+              type="number"
+              inputProps={{ min: 0, step: "0.01" }}
+              placeholder="0.00"
+              value={row.visaFee}
+              onChange={(e) => onChange("visaFee", e.target.value)}
+              sx={fieldSx}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>Commission</Typography>
+            <TextField
+              fullWidth
+              type="number"
+              inputProps={{ min: 0, step: "0.01" }}
+              placeholder="0.00"
+              value={row.commission}
+              onChange={(e) => onChange("commission", e.target.value)}
+              sx={fieldSx}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Total Price <span style={{ color: C.danger }}>*</span>
+            </Typography>
+            <TextField
+              fullWidth
+              value={totalPrice}
+              InputProps={{ readOnly: true }}
+              sx={readOnlyFieldSx}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography sx={labelSx}>
+              Currency <span style={{ color: C.danger }}>*</span>
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              value={row.currency}
+              onChange={(e) => onChange("currency", e.target.value)}
+              sx={fieldSx}
+            >
+              {CURRENCIES.map((currency) => (
+                <MenuItem key={currency} value={currency}>
+                  {currency}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        </Grid>
       </Box>
-      <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2.5 }}>{children}</Box>
+    </Box>
+  );
+}
+
+function FormSection({ title, children }) {
+  return (
+    <Box
+      sx={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 2,
+        bgcolor: "#FAFBFC",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          px: 2,
+          py: 1.5,
+          borderBottom: `1px solid ${C.border}`,
+          bgcolor: "#FFFFFF",
+        }}
+      >
+        <InfoOutlinedIcon sx={{ fontSize: 18, color: C.secondary }} />
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary }}>{title}</Typography>
+      </Box>
+      <Box sx={{ p: { xs: 2, md: 2.5 } }}>{children}</Box>
     </Box>
   );
 }
 
 export default function AddVisa() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { token } = useAuth();
+
+  const visaFromState = location.state?.visa || null;
+  const isEditing = Boolean(location.state?.editMode && visaFromState);
+  const editingVisaId = visaFromState?.visaId ?? visaFromState?.id ?? visaFromState?._id ?? null;
+
+  const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const [departureCountry, setDepartureCountry] = useState("");
   const [arrivalCountry, setArrivalCountry] = useState("");
-  const [visaCategory, setVisaCategory] = useState("");
-  const [visaType, setVisaType] = useState("");
-  const [cost, setCost] = useState("");
+  const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
-  const [durationCosts, setDurationCosts] = useState([emptyDurationCost()]);
-  const [visaRequiredDocuments, setVisaRequiredDocuments] = useState(emptyDocuments());
-  const [documentFiles, setDocumentFiles] = useState([]);
+  const [pricingVariants, setPricingVariants] = useState([emptyPricingVariant()]);
+  const [requirements, setRequirements] = useState([emptyRequirement()]);
 
-  const updateDuration = (index, field, value) => {
-    setDurationCosts((prev) =>
+  useEffect(() => {
+    if (!isEditing || !visaFromState) return;
+
+    setDepartureCountry(visaFromState.departureCountry || "");
+    setArrivalCountry(visaFromState.arrivalCountry || "");
+    setDescription(visaFromState.description || "");
+    setIsActive(visaFromState.isActive !== false);
+    setPricingVariants(normalizePricingVariants(visaFromState.durationCosts || visaFromState.variants));
+    setRequirements(normalizeRequirementsFromVisa(visaFromState));
+  }, [isEditing, visaFromState]);
+
+  const updatePricingVariant = (index, field, value) => {
+    setPricingVariants((prev) =>
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
     );
   };
 
-  const addDurationRow = () => {
-    setDurationCosts((prev) => [...prev, emptyDurationCost()]);
+  const addPricingVariant = () => {
+    setPricingVariants((prev) => [...prev, emptyPricingVariant()]);
   };
 
-  const removeDurationRow = (index) => {
-    if (durationCosts.length <= 1) {
-      toast.info("At least one duration & pricing option is required.");
+  const removePricingVariant = (index) => {
+    if (pricingVariants.length <= 1) {
+      toast.info("At least one pricing variant is required.");
       return;
     }
-    setDurationCosts((prev) => prev.filter((_, i) => i !== index));
+    setPricingVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateDocuments = (field, value) => {
-    setVisaRequiredDocuments((prev) => ({ ...prev, [field]: value }));
+  const updateRequirement = (index, value) => {
+    setRequirements((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
 
-  const addDocumentFiles = (newItems) => {
-    setDocumentFiles((prev) => {
-      const existing = new Set(prev.map((p) => p.id));
-      const merged = [...prev];
-      for (const item of newItems) {
-        if (!existing.has(item.id)) merged.push(item);
-      }
-      return merged;
-    });
+  const addRequirement = () => {
+    setRequirements((prev) => [...prev, emptyRequirement()]);
   };
 
-  const removeDocumentFile = (id) => {
-    setDocumentFiles((prev) => prev.filter((f) => f.id !== id));
+  const removeRequirement = (index) => {
+    if (requirements.length <= 1) {
+      setRequirements([emptyRequirement()]);
+      return;
+    }
+    setRequirements((prev) => prev.filter((_, i) => i !== index));
   };
 
   const buildPayload = () => {
-    const parsedDurations = durationCosts.map((row) => ({
-      cost: Number(row.cost),
-      entry: String(row.entry || "").trim(),
-      duration: String(row.duration || "").trim(),
-      maximumStay: String(row.maximumStay || "").trim(),
-      processingTime: String(row.processingTime || "").trim(),
-      interview: String(row.interview || "").trim(),
-      embassyFee: String(row.embassyFee || "").trim(),
-      agentFee: String(row.agentFee || "").trim(),
-      serviceCharge: String(row.serviceCharge || "").trim(),
-      processingFee: String(row.processingFee || "").trim(),
-    }));
-
-    const documentNames = documentFiles.map(({ file }) => file.name).join(", ");
-
-    return {
+    const payload = {
       departureCountry: departureCountry.trim(),
       arrivalCountry: arrivalCountry.trim(),
-      visaCategory: visaCategory.trim(),
-      visaType: visaType.trim(),
-      cost: Number(cost),
-      durationCosts: parsedDurations,
-      visaRequiredDocuments: {
-        profession: visaRequiredDocuments.profession.trim(),
-        documents: documentNames,
-        exceptionalCase: visaRequiredDocuments.exceptionalCase.trim(),
-        note: visaRequiredDocuments.note.trim(),
-      },
+      description: description.trim(),
+      isActive,
+      variants: pricingVariants.map((row) => ({
+        visaType: String(row.visaType || "").trim(),
+        entryType: String(row.entryType || "").trim(),
+        durationDays: String(row.durationDays || "").trim(),
+        processingSpeed: String(row.processingSpeed || "").trim(),
+        visaFee: Number(row.visaFee) || 0,
+        commission: Number(row.commission) || 0,
+        totalPrice: calcVariantTotal(row),
+        currency: String(row.currency || "BDT").trim(),
+      })),
+      requirements: requirements.map((text) => text.trim()).filter(Boolean),
     };
+
+    return payload;
   };
 
   const validate = () => {
     if (!departureCountry.trim()) {
-      toast.error("Departure country is required.");
+      toast.error("From country is required.");
+      setActiveTab(0);
       return false;
     }
     if (!arrivalCountry.trim()) {
-      toast.error("Arrival country is required.");
+      toast.error("To country is required.");
+      setActiveTab(0);
       return false;
     }
-    if (!visaCategory) {
-      toast.error("Visa category is required.");
-      return false;
-    }
-    if (!visaType) {
-      toast.error("Visa type is required.");
-      return false;
-    }
-    if (cost === "" || Number.isNaN(Number(cost)) || Number(cost) < 0) {
-      toast.error("Enter a valid base cost.");
-      return false;
-    }
-
-    for (let i = 0; i < durationCosts.length; i += 1) {
-      const row = durationCosts[i];
-      if (row.cost === "" || Number.isNaN(Number(row.cost))) {
-        toast.error(`Duration option ${i + 1}: cost is required.`);
+    for (let i = 0; i < pricingVariants.length; i += 1) {
+      const row = pricingVariants[i];
+      if (!row.visaType) {
+        toast.error(`Variant ${i + 1}: visa type is required.`);
+        setActiveTab(1);
         return false;
       }
-      if (!row.entry || !row.duration || !row.maximumStay || !row.processingTime || !row.interview) {
-        toast.error(`Duration option ${i + 1}: fill entry, duration, stay, processing time, and interview.`);
+      if (!row.entryType) {
+        toast.error(`Variant ${i + 1}: entry type is required.`);
+        setActiveTab(1);
+        return false;
+      }
+      if (!row.durationDays) {
+        toast.error(`Variant ${i + 1}: duration is required.`);
+        setActiveTab(1);
+        return false;
+      }
+      if (!row.processingSpeed) {
+        toast.error(`Variant ${i + 1}: processing speed is required.`);
+        setActiveTab(1);
+        return false;
+      }
+      if (calcVariantTotal(row) <= 0) {
+        toast.error(`Variant ${i + 1}: enter visa fee or commission for total price.`);
+        setActiveTab(1);
+        return false;
+      }
+      if (!row.currency) {
+        toast.error(`Variant ${i + 1}: currency is required.`);
+        setActiveTab(1);
         return false;
       }
     }
 
-    if (!visaRequiredDocuments.profession.trim()) {
-      toast.error("Profession is required.");
-      return false;
-    }
-    if (documentFiles.length === 0) {
-      toast.error("Upload at least one required document file.");
+    const filledRequirements = requirements.map((text) => text.trim()).filter(Boolean);
+    if (filledRequirements.length === 0) {
+      toast.error("Add at least one requirement.");
+      setActiveTab(2);
       return false;
     }
 
@@ -483,45 +939,250 @@ export default function AddVisa() {
       return;
     }
 
+    if (isEditing && editingVisaId == null) {
+      toast.error("Visa ID missing. Cannot update.");
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = buildPayload();
-      const response = await axios.post(
-        `${API_BASE_URL}${API_ENDPOINTS.CREATE_VISA}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      const headers = {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = isEditing
+        ? await axios.patch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_VISA(editingVisaId)}`, payload, { headers })
+        : await axios.post(`${API_BASE_URL}${API_ENDPOINTS.CREATE_VISA}`, payload, { headers });
 
       if (response.status === 200 || response.status === 201) {
-        showApiSuccessToast(response);
+        showApiSuccessToast(response, isEditing ? "Visa updated successfully." : "Visa created successfully.");
         navigate("/dashboard/visa/allvisa");
       }
     } catch (err) {
       showApiErrorToasts(err);
-      console.error("Create visa failed:", err?.response?.data || err);
+      console.error("Save visa failed:", err?.response?.data || err);
     } finally {
       setLoading(false);
     }
   };
 
+  const renderGeneralTab = () => (
+    <FormSection title="Basic Information">
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <Typography sx={labelSx}>
+            From Country <span style={{ color: C.danger }}>*</span>
+          </Typography>
+          <Autocomplete
+            freeSolo
+            options={COUNTRIES}
+            value={departureCountry}
+            onChange={(_, value) => setDepartureCountry(value || "")}
+            onInputChange={(_, value) => setDepartureCountry(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Country"
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Typography sx={labelSx}>
+            To Country <span style={{ color: C.danger }}>*</span>
+          </Typography>
+          <Autocomplete
+            freeSolo
+            options={COUNTRIES}
+            value={arrivalCountry}
+            onChange={(_, value) => setArrivalCountry(value || "")}
+            onInputChange={(_, value) => setArrivalCountry(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Country"
+                sx={fieldSx}
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Typography sx={labelSx}>Description</Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            placeholder="Enter Visa Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={multilineFieldSx}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              border: `1px solid ${C.border}`,
+              borderRadius: 1.5,
+              px: 2,
+              py: 1,
+              bgcolor: "#FFFFFF",
+              width: "fit-content",
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  sx={checkboxSx}
+                />
+              }
+              label={<Typography sx={{ fontSize: 14, fontWeight: 600, color: C.primary }}>Active</Typography>}
+            />
+          </Box>
+        </Grid>
+      </Grid>
+    </FormSection>
+  );
+
+  const renderPricingTab = () => (
+    <Box>
+      {pricingVariants.map((row, index) => (
+        <PricingVariantCard
+          key={`variant-${index}`}
+          index={index}
+          row={row}
+          onChange={(field, value) => updatePricingVariant(index, field, value)}
+          onRemove={() => removePricingVariant(index)}
+          canRemove={pricingVariants.length > 1}
+        />
+      ))}
+
+      <Button
+        type="button"
+        fullWidth
+        variant="contained"
+        startIcon={<AddCircleOutlineIcon />}
+        onClick={addPricingVariant}
+        sx={{
+          textTransform: "none",
+          fontWeight: 700,
+          fontSize: 14,
+          py: 1.35,
+          borderRadius: 1.5,
+          bgcolor: C.primary,
+          boxShadow: "none",
+          "&:hover": { bgcolor: "#0A2540", boxShadow: "none" },
+        }}
+      >
+        Add New Variant
+      </Button>
+    </Box>
+  );
+
+  const renderRequirementsTab = () => (
+    <Box
+      sx={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 2,
+        bgcolor: "#F8FAFC",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          px: 2,
+          pt: 2,
+          pb: 1,
+        }}
+      >
+        <FactCheckOutlinedIcon sx={{ fontSize: 20, color: C.secondary }} />
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary }}>
+          Visa Requirements
+        </Typography>
+      </Box>
+
+      <Box sx={{ px: 2, pb: 2 }}>
+        {requirements.map((requirement, index) => (
+          <Box
+            key={`requirement-${index}`}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 1.5,
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Enter Requirement"
+              value={requirement}
+              onChange={(e) => updateRequirement(index, e.target.value)}
+              sx={fieldSx}
+            />
+            <IconButton
+              type="button"
+              onClick={() => removeRequirement(index)}
+              aria-label={`Remove requirement ${index + 1}`}
+              sx={{
+                width: INPUT_HEIGHT,
+                height: INPUT_HEIGHT,
+                borderRadius: 1,
+                bgcolor: C.primary,
+                color: "#FFFFFF",
+                flexShrink: 0,
+                "&:hover": { bgcolor: "#0A2540" },
+              }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        ))}
+
+        <Button
+          type="button"
+          fullWidth
+          variant="contained"
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={addRequirement}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: 14,
+            py: 1.35,
+            borderRadius: 1.5,
+            bgcolor: C.primary,
+            boxShadow: "none",
+            "&:hover": { bgcolor: "#0A2540", boxShadow: "none" },
+          }}
+        >
+          Add Requirement
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  const tabPanels = [renderGeneralTab, renderPricingTab, renderRequirementsTab];
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "var(--page-bg, #F4F7FE)",
+        bgcolor: C.pageBg,
         px: { xs: 1.5, md: 2 },
         py: { xs: 2, md: 3 },
       }}
     >
-      <Box sx={{ maxWidth: 1100, mx: "auto" }}>
+      <Box sx={{ maxWidth: 960, mx: "auto" }}>
         <AdminPageTitleBar
-          title="Add Visa"
-          subtitle="Configure route, pricing tiers, and document requirements"
+          title={isEditing ? "Edit Visa" : "Add Visa"}
+          subtitle="Configure visa route, pricing, and requirements"
           action={
             <IconButton
               onClick={() => navigate("/dashboard/visa/allvisa")}
@@ -537,369 +1198,72 @@ export default function AddVisa() {
           }
         />
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <SectionCard
-            step={1}
-            icon={<PublicIcon fontSize="small" />}
-            title="Route & visa class"
-            subtitle="Where travelers depart from, where they go, and what kind of visa applies"
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            mt: 2,
+            borderRadius: 2,
+            border: `1px solid ${C.border}`,
+            bgcolor: C.cardBg,
+            boxShadow: "0 1px 4px rgba(15, 47, 86, 0.06)",
+            overflow: "hidden",
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={(_, value) => setActiveTab(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              px: { xs: 1, md: 2 },
+              borderBottom: `1px solid ${C.border}`,
+              bgcolor: "#FFFFFF",
+              minHeight: 56,
+              "& .MuiTabs-indicator": {
+                height: 3,
+                borderRadius: "3px 3px 0 0",
+                bgcolor: C.secondary,
+              },
+            }}
           >
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography sx={labelSx}>
-                  Departure country <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="e.g. India"
-                  value={departureCountry}
-                  onChange={(e) => setDepartureCountry(e.target.value)}
-                  sx={fieldSx}
+            {TABS.map((tab, index) => {
+              const Icon = tab.icon;
+              return (
+                <Tab
+                  key={tab.id}
+                  icon={<Icon sx={{ fontSize: 20 }} />}
+                  iconPosition="start"
+                  label={tab.label}
+                  sx={{
+                    textTransform: "none",
+                    minHeight: 56,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: C.muted,
+                    gap: 0.75,
+                    "&.Mui-selected": { color: C.secondary },
+                  }}
+                  id={`visa-tab-${index}`}
+                  aria-controls={`visa-tabpanel-${index}`}
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography sx={labelSx}>
-                  Arrival country <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="e.g. United States"
-                  value={arrivalCountry}
-                  onChange={(e) => setArrivalCountry(e.target.value)}
-                  sx={fieldSx}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography sx={labelSx}>
-                  Visa category <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  value={visaCategory}
-                  onChange={(e) => setVisaCategory(e.target.value)}
-                  sx={fieldSx}
-                  SelectProps={{ displayEmpty: true }}
-                >
-                  <MenuItem value="" disabled>
-                    Select category
-                  </MenuItem>
-                  {VISA_CATEGORIES.map((c) => (
-                    <MenuItem key={c} value={c}>
-                      {c}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography sx={labelSx}>
-                  Visa type <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  value={visaType}
-                  onChange={(e) => setVisaType(e.target.value)}
-                  sx={fieldSx}
-                  SelectProps={{ displayEmpty: true }}
-                >
-                  <MenuItem value="" disabled>
-                    Select type
-                  </MenuItem>
-                  {VISA_TYPES.map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {t}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography sx={labelSx}>
-                  Base cost (USD) <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth
-                  type="number"
-                  inputProps={{ min: 0, step: "any" }}
-                  placeholder="e.g. 200"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  sx={fieldSx}
-                />
-              </Grid>
-            </Grid>
+              );
+            })}
+          </Tabs>
 
-            {departureCountry && arrivalCountry ? (
+          <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+            {tabPanels.map((renderPanel, index) => (
               <Box
-                sx={{
-                  mt: 2.5,
-                  p: 1.5,
-                  borderRadius: 1.5,
-                  bgcolor: "#F0F7FF",
-                  border: "1px dashed #024DAF55",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  flexWrap: "wrap",
-                }}
+                key={TABS[index].id}
+                role="tabpanel"
+                hidden={activeTab !== index}
+                id={`visa-tabpanel-${index}`}
+                aria-labelledby={`visa-tab-${index}`}
               >
-                <FlightTakeoffIcon sx={{ color: "#024DAF", fontSize: 20 }} />
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#0F2F56" }}>
-                  {departureCountry.trim()}
-                </Typography>
-                <Typography sx={{ color: "#94A3B8" }}>→</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#024DAF" }}>
-                  {arrivalCountry.trim()}
-                </Typography>
-                {visaCategory ? (
-                  <Typography sx={{ fontSize: 12, color: "#64748B", ml: "auto" }}>
-                    {visaCategory} · {visaType || "—"}
-                  </Typography>
-                ) : null}
-              </Box>
-            ) : null}
-          </SectionCard>
-
-          <SectionCard
-            step={2}
-            icon={<PaymentsIcon fontSize="small" />}
-            title="Duration & pricing"
-            subtitle="Add one or more processing options with fees and timelines"
-            accent="#0A2B76"
-          >
-            {durationCosts.map((row, index) => (
-              <Box
-                key={`duration-${index}`}
-                sx={{
-                  mb: index < durationCosts.length - 1 ? 2.5 : 0,
-                  p: 2,
-                  borderRadius: 1.5,
-                  border: "1px solid #E8EDF5",
-                  bgcolor: index % 2 === 0 ? "#FAFCFF" : "#FFFFFF",
-                  position: "relative",
-                }}
-              >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#334155" }}>
-                    Option {index + 1}
-                  </Typography>
-                  {durationCosts.length > 1 ? (
-                    <IconButton
-                      size="small"
-                      onClick={() => removeDurationRow(index)}
-                      aria-label="Remove duration option"
-                      sx={{ color: "#E11D48" }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  ) : null}
-                </Box>
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Typography sx={labelSx}>Cost *</Typography>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      inputProps={{ min: 0 }}
-                      placeholder="1500"
-                      value={row.cost}
-                      onChange={(e) => updateDuration(index, "cost", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Typography sx={labelSx}>Entry *</Typography>
-                    <TextField
-                      select
-                      fullWidth
-                      value={row.entry}
-                      onChange={(e) => updateDuration(index, "entry", e.target.value)}
-                      sx={fieldSx}
-                      SelectProps={{ displayEmpty: true }}
-                    >
-                      <MenuItem value="" disabled>
-                        Select entry
-                      </MenuItem>
-                      {ENTRY_TYPES.map((e) => (
-                        <MenuItem key={e} value={e}>
-                          {e}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Typography sx={labelSx}>Duration *</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="30 days"
-                      value={row.duration}
-                      onChange={(e) => updateDuration(index, "duration", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Typography sx={labelSx}>Maximum stay *</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="90 days"
-                      value={row.maximumStay}
-                      onChange={(e) => updateDuration(index, "maximumStay", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Processing time *</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="10 business days"
-                      value={row.processingTime}
-                      onChange={(e) => updateDuration(index, "processingTime", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Interview *</Typography>
-                    <TextField
-                      select
-                      fullWidth
-                      value={row.interview}
-                      onChange={(e) => updateDuration(index, "interview", e.target.value)}
-                      sx={fieldSx}
-                      SelectProps={{ displayEmpty: true }}
-                    >
-                      <MenuItem value="" disabled>
-                        Select
-                      </MenuItem>
-                      {INTERVIEW_OPTIONS.map((opt) => (
-                        <MenuItem key={opt} value={opt}>
-                          {opt}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Embassy fee</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="100 USD"
-                      value={row.embassyFee}
-                      onChange={(e) => updateDuration(index, "embassyFee", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Agent fee</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="50 USD"
-                      value={row.agentFee}
-                      onChange={(e) => updateDuration(index, "agentFee", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Service charge</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="20 USD"
-                      value={row.serviceCharge}
-                      onChange={(e) => updateDuration(index, "serviceCharge", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <Typography sx={labelSx}>Processing fee</Typography>
-                    <TextField
-                      fullWidth
-                      placeholder="30 USD"
-                      value={row.processingFee}
-                      onChange={(e) => updateDuration(index, "processingFee", e.target.value)}
-                      sx={fieldSx}
-                    />
-                  </Grid>
-                </Grid>
+                {activeTab === index ? renderPanel() : null}
               </Box>
             ))}
-
-            <Button
-              type="button"
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={addDurationRow}
-              sx={{
-                mt: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                borderColor: "#024DAF",
-                color: "#024DAF",
-                borderRadius: 1.5,
-                "&:hover": { borderColor: "#0A2B76", bgcolor: "#F0F7FF" },
-              }}
-            >
-              Add another duration option
-            </Button>
-          </SectionCard>
-
-          <SectionCard
-            step={3}
-            icon={<DescriptionIcon fontSize="small" />}
-            title="Required documents"
-            subtitle="Profession-specific checklist and notes for applicants"
-            accent="#0369A1"
-          >
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography sx={labelSx}>
-                  Profession <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="e.g. Software Engineer"
-                  value={visaRequiredDocuments.profession}
-                  onChange={(e) => updateDocuments("profession", e.target.value)}
-                  sx={fieldSx}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography sx={labelSx}>
-                  Documents <span style={{ color: "#E11D48" }}>*</span>
-                </Typography>
-                <DocumentUploadZone
-                  files={documentFiles}
-                  onAdd={addDocumentFiles}
-                  onRemove={removeDocumentFile}
-                  disabled={loading}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography sx={labelSx}>Exceptional case</Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  placeholder="Special cases or alternate documents"
-                  value={visaRequiredDocuments.exceptionalCase}
-                  onChange={(e) => updateDocuments("exceptionalCase", e.target.value)}
-                  sx={fieldSx}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography sx={labelSx}>Note</Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  placeholder="e.g. Documents must be in English or translated"
-                  value={visaRequiredDocuments.note}
-                  onChange={(e) => updateDocuments("note", e.target.value)}
-                  sx={fieldSx}
-                />
-              </Grid>
-            </Grid>
-          </SectionCard>
-
-          <Divider sx={{ borderColor: "#E2E8F0" }} />
+          </Box>
 
           <Box
             sx={{
@@ -907,7 +1271,10 @@ export default function AddVisa() {
               justifyContent: "flex-end",
               gap: 1.5,
               flexWrap: "wrap",
-              pb: 2,
+              px: { xs: 2, md: 2.5 },
+              py: 2,
+              borderTop: `1px solid ${C.border}`,
+              bgcolor: "#FAFBFC",
             }}
           >
             <Button
@@ -920,8 +1287,9 @@ export default function AddVisa() {
                 fontWeight: 600,
                 borderRadius: 1.5,
                 px: 3,
-                color: "#64748B",
+                color: C.muted,
                 borderColor: "#CBD5E1",
+                bgcolor: "#FFFFFF",
               }}
             >
               Cancel
@@ -930,22 +1298,19 @@ export default function AddVisa() {
               type="submit"
               variant="contained"
               disabled={loading}
+              startIcon={loading ? null : <SaveOutlinedIcon />}
               sx={{
                 textTransform: "none",
                 fontWeight: 700,
                 borderRadius: 1.5,
-                px: 4,
-                py: 1.25,
-                bgcolor: "#024DAF",
-                boxShadow: "0 4px 14px rgba(2, 77, 175, 0.35)",
+                px: 3,
+                py: 1,
+                bgcolor: C.secondary,
+                boxShadow: "0 4px 14px rgba(2, 77, 175, 0.3)",
                 "&:hover": { bgcolor: "#0A2B76" },
               }}
             >
-              {loading ? (
-                <CircularProgress size={22} sx={{ color: "#fff" }} />
-              ) : (
-                "Create visa"
-              )}
+              {loading ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : "Submit"}
             </Button>
           </Box>
         </Box>

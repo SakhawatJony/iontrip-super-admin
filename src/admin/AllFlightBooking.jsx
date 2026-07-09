@@ -4,7 +4,7 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -15,6 +15,7 @@ import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 import {
   formatTripTypeLabel,
   mapBookingToTableRow,
+  matchesHistoryStatusFilter,
   resolveBookingFlightDate,
   resolveBookingRoute,
 } from "./bookingListUtils.js";
@@ -28,10 +29,12 @@ const statusLabelMap = {
   "hold": "Hold",
   "issueinprocess": "Issue in Process",
   "booked": "Booked",
+  "cancelled": "Cancelled",
 };
 
 const tableColumns = [
   { key: "bookingId", label: "Booking Id", width: "120px" },
+  { key: "system", label: "System", width: "120px" },
   { key: "customer", label: "Customer", width: "150px" },
   { key: "route", label: "Route", width: "90px" },
   { key: "type", label: "Type", width: "80px" },
@@ -87,16 +90,34 @@ const STATUS_OPTIONS = [
   { value: "ticketed", label: "Ticketed" },
   { value: "reissue", label: "Reissue" },
   { value: "refund", label: "Refund" },
+  { value: "cancelled", label: "Cancelled" },
   { value: "hold", label: "Hold" },
   { value: "void", label: "Void" },
   { value: "issueinprocess", label: "Issue in Process" },
 ];
 
+const STATUS_API_QUERY_MAP = {
+  issueinprocess: "issue in process",
+};
+
+function getStatusFromPath(pathname = "") {
+  if (pathname.includes("ticketedhistory")) return "ticketed";
+  if (pathname.includes("issueinprocesshistory")) return "issueinprocess";
+  if (pathname.includes("cancelledhistory")) return "cancelled";
+  if (pathname.includes("reissuehistory")) return "reissue";
+  if (pathname.includes("refundshistory")) return "refund";
+  return "";
+}
+
 const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Booking", defaultStatus = "" }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { token, user } = useAuth();
-  
-  const [status, setStatus] = useState(defaultStatus);
+
+  const routeStatus = getStatusFromPath(location.pathname);
+  const lockedStatus = defaultStatus || routeStatus;
+
+  const [status, setStatus] = useState(lockedStatus);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [bookings, setBookings] = useState([]);
@@ -125,6 +146,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
   };
 
   const handleStatusSelect = (statusValue) => {
+    if (lockedStatus && statusValue !== lockedStatus) return;
     setStatus(statusValue);
     setPage(1);
     handleStatusClose();
@@ -180,8 +202,10 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
         limit: limit.toString(),
       });
 
-      if (status) {
-        params.append("status", status);
+      const effectiveStatus = lockedStatus || status;
+
+      if (effectiveStatus) {
+        params.append("status", STATUS_API_QUERY_MAP[effectiveStatus] || effectiveStatus);
       }
 
       if (bookingIdFilter && bookingIdFilter.trim()) {
@@ -208,19 +232,41 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
         : (response?.data?.data || []);
       const paginationData = response?.data || {};
       const summaryData = response?.data?.statusSummary || [];
+
+      const filteredBookings = effectiveStatus
+        ? bookingsData.filter((booking) => matchesHistoryStatusFilter(booking, effectiveStatus))
+        : bookingsData;
+
+      const summaryMatch = summaryData.find((item) => {
+        const summaryStatus = String(item?.status || "").toLowerCase();
+        return (
+          summaryStatus === effectiveStatus ||
+          summaryStatus === String(STATUS_API_QUERY_MAP[effectiveStatus] || "").toLowerCase()
+        );
+      });
+      const clientFiltered =
+        effectiveStatus && filteredBookings.length !== bookingsData.length;
+      const totalCount = clientFiltered
+        ? filteredBookings.length
+        : (effectiveStatus && summaryMatch?.count != null
+            ? Number(summaryMatch.count)
+            : null) ??
+          paginationData.total ??
+          filteredBookings.length ??
+          0;
+      const calculatedTotalPages = clientFiltered
+        ? Math.max(1, Math.ceil(totalCount / limit) || 1)
+        : paginationData.totalPages
+          ? paginationData.totalPages
+          : Math.ceil(totalCount / limit) || 1;
       
-      const totalCount = paginationData.total || bookingsData.length || 0;
-      const calculatedTotalPages = paginationData.totalPages 
-        ? paginationData.totalPages 
-        : Math.ceil(totalCount / limit) || 1;
-      
-      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setBookings(Array.isArray(filteredBookings) ? filteredBookings : []);
       setTotalPages(calculatedTotalPages);
       setTotal(totalCount);
       setStatusSummary(Array.isArray(summaryData) ? summaryData : []);
       
-      if (bookingsData.length > 0 && bookingsData[0]?.farecurrency) {
-        setCurrency(bookingsData[0].farecurrency);
+      if (filteredBookings.length > 0 && filteredBookings[0]?.farecurrency) {
+        setCurrency(filteredBookings[0].farecurrency);
       }
     } catch (err) {
       const apiMessage =
@@ -235,22 +281,23 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     } finally {
       setLoading(false);
     }
-  }, [status, page, limit, bookingIdFilter, pnrFilter, airlinesFilter, token]);
+  }, [status, page, limit, bookingIdFilter, pnrFilter, airlinesFilter, token, lockedStatus]);
 
-  // Keep internal filter in sync with route-provided default.
+  // Reset filters when switching between booking history sub-routes.
   useEffect(() => {
-    if (defaultStatus !== undefined && defaultStatus !== status) {
-      setStatus(defaultStatus);
-      setPage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultStatus]);
+    setStatus(lockedStatus);
+    setPage(1);
+    setBookingIdFilter("");
+    setPnrFilter("");
+    setAirlinesFilter("");
+    setError("");
+  }, [location.pathname, lockedStatus]);
 
   useEffect(() => {
     if (token) {
       fetchBookings();
     }
-  }, [status, page, limit, fetchBookings, token]);
+  }, [status, page, limit, fetchBookings, token, location.pathname, lockedStatus]);
 
   useEffect(() => {
     if (!token) return;
@@ -262,11 +309,12 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
     return () => clearTimeout(timeoutId);
   }, [bookingIdFilter, pnrFilter, airlinesFilter, fetchBookings]);
 
-  const selectedStatusLabel = STATUS_OPTIONS.find((opt) => opt.value === status)?.label || buttonLabel;
-  const headerText = defaultStatus ? title : "Booking History";
+  const selectedStatusLabel = STATUS_OPTIONS.find((opt) => opt.value === (lockedStatus || status))?.label || buttonLabel;
+  const headerText = lockedStatus ? title : "Booking History";
+  const isStatusMenuDisabled = Boolean(lockedStatus);
 
   const getStatusCards = () => {
-    const statusOrder = ["ticketed", "reissue", "refund", "void", "hold", "issueinprocess", "booked"];
+    const statusOrder = ["ticketed", "reissue", "refund", "cancelled", "void", "hold", "issueinprocess", "booked"];
     const summaryMap = new Map();
     statusSummary.forEach((item) => {
       summaryMap.set(item.status?.toLowerCase(), item);
@@ -623,7 +671,8 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           >
             <Button
               variant="contained"
-              onClick={handleStatusClick}
+              onClick={isStatusMenuDisabled ? undefined : handleStatusClick}
+              disabled={isStatusMenuDisabled}
               endIcon={
                 <Box
                   sx={{
@@ -671,6 +720,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
           </Box>
         </Box>
 
+        {!isStatusMenuDisabled && (
         <Menu
           anchorEl={anchorEl}
           open={open}
@@ -698,6 +748,7 @@ const AllFlightBooking = ({ title = "All Flight Booking", buttonLabel = "All Boo
             </MenuItem>
           ))}
         </Menu>
+        )}
 
         <Box
           sx={{

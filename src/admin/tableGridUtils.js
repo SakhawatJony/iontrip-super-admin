@@ -16,16 +16,27 @@ export function fluidGridTemplateFromColumns(columns) {
     .join(" ");
 }
 
-/** Grid columns keep a minimum width and grow to fit cell content (use with overflow-x: auto). */
-export function scrollableGridTemplateFromColumns(columns) {
+/** Fixed pixel columns — header and body rows stay aligned (use with overflow-x: auto). */
+export function fixedGridTemplateFromColumns(columns) {
   if (!columns?.length) return "";
   return columns
     .map((col) => {
       const raw = col?.width ?? "80px";
-      if (typeof raw === "number") return `minmax(${raw}px, max-content)`;
+      if (typeof raw === "number") return `${raw}px`;
       const trimmed = String(raw).trim();
-      const width = trimmed.endsWith("px") ? trimmed : `${trimmed}px`;
-      return `minmax(${width}, max-content)`;
+      return trimmed.endsWith("px") ? trimmed : `${trimmed}px`;
     })
     .join(" ");
+}
+
+export function tableMinWidthFromColumns(columns) {
+  if (!columns?.length) return 0;
+  return columns.reduce((sum, col) => {
+    const raw = col?.width ?? "80px";
+    const w =
+      typeof raw === "number"
+        ? raw
+        : parseInt(String(raw).replace(/px/gi, "").trim(), 10) || 80;
+    return sum + w;
+  }, 0);
 }

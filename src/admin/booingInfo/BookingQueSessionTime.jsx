@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { BQ, bqCardSx } from "./bookingQueTheme.js";
-import { formatCountdownTo } from "./bookingQueUtils.js";
+import { formatCountdownTo, resolveBookingDisplayStatus, shouldShowBookingDeadlineTimer } from "./bookingQueUtils.js";
 
 const BookingQueSessionTime = ({ data }) => {
   const [countdown, setCountdown] = useState(null);
+  const displayStatus = resolveBookingDisplayStatus(data);
+  const showDeadlineTimer = shouldShowBookingDeadlineTimer(displayStatus);
 
   useEffect(() => {
-    if (!data?.lastTicketTime) return;
+    if (!data?.lastTicketTime || !showDeadlineTimer) {
+      setCountdown(null);
+      return undefined;
+    }
     const tick = () => setCountdown(formatCountdownTo(data.lastTicketTime));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [data?.lastTicketTime]);
+  }, [data?.lastTicketTime, showDeadlineTimer]);
 
-  if (!data?.lastTicketTime || !countdown) return null;
+  if (!showDeadlineTimer || !data?.lastTicketTime || !countdown) return null;
 
   const expired = countdown.expired;
   const progress = expired

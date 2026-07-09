@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Box, Divider, Typography, Tab, Tabs } from "@mui/material";
-import FlightIcon from "@mui/icons-material/Flight";
 import FlightOutlinedIcon from "@mui/icons-material/FlightOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { BQ, bqCardSx } from "./bookingQueTheme.js";
@@ -8,14 +7,15 @@ import { BqAccentTitle, BqTagChip } from "./bookingQueUi.jsx";
 import {
   formatDisplayDuration,
   isRoundTripBooking,
+  resolveBaggageAllowance,
   resolveBookingBackSegments,
   resolveBookingGoSegments,
   resolveSierraLegSummary,
 } from "../flightItineraryUtils";
+import AirlineLogoImage from "../AirlineLogoImage";
 
 const BookingQueDetailsCard = ({ data }) => {
   const [tab, setTab] = useState(0);
-  const [logoErrors, setLogoErrors] = useState({});
 
   const formatTime = (dateString) => {
     if (!dateString) return "N/A";
@@ -37,18 +37,26 @@ const BookingQueDetailsCard = ({ data }) => {
     }
   };
 
+  const pricebreakdown = Array.isArray(data?.pricebreakdown) ? data.pricebreakdown : [];
+
   const buildSegments = (segmentsArray) => {
     return segmentsArray.map((segment, index) => {
       const dep = segment.departureAirport || segment.departure || "N/A";
       const arr = segment.arrivalAirport || segment.arrival || "N/A";
       const depName = segment.departureAirportName || segment.departureName || dep;
       const arrName = segment.arrivalAirportName || segment.arrivalName || arr;
-      const carrierCode = segment.marketingcareer || segment.marketingCarrier || "";
+      const carrierCode =
+        segment.marketingcareer ||
+        segment.marketingCarrier ||
+        segment.career ||
+        data?.career ||
+        data?.careerCode ||
+        "";
       const airline =
         `${segment.marketingcareerName || segment.marketingCarrierName || ""} · ${carrierCode} ${segment.marketingflight || segment.marketingFlight || ""}`.trim();
       const cabin = segment.class || segment.cabin || data?.cabinClass || "ECONOMY";
-      const baggage = segment.bags || "—";
-      const cabinBag = segment.cabinBag || segment.cabinbag || "7KG";
+      const priceRow = pricebreakdown[index] || pricebreakdown[0] || {};
+      const { checkin, cabin: cabinBag } = resolveBaggageAllowance(segment, priceRow, data);
       const duration = formatDisplayDuration(segment.flightduration || segment.duration) || "—";
 
       return {
@@ -62,7 +70,7 @@ const BookingQueDetailsCard = ({ data }) => {
         arrName,
         airline,
         cabin: String(cabin).toUpperCase(),
-        baggage,
+        checkinBag: checkin,
         cabinBag,
         duration,
         carrierCode,
@@ -171,11 +179,6 @@ const BookingQueDetailsCard = ({ data }) => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
           {currentSegments.map((segment, index) => {
             const logoCode = String(segment.carrierCode || "").toUpperCase();
-            const logoKey = `${logoCode}-${tab}-${index}`;
-            const logoUrl = logoCode
-              ? `https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/${logoCode}.png`
-              : "";
-            const hasLogo = Boolean(logoUrl) && !logoErrors[logoKey];
 
             return (
               <Box
@@ -193,7 +196,7 @@ const BookingQueDetailsCard = ({ data }) => {
                       width: 36,
                       height: 36,
                       borderRadius: 1.5,
-                      bgcolor: hasLogo ? "#fff" : BQ.navy,
+                      bgcolor: "#fff",
                       border: `1px solid ${BQ.border}`,
                       display: "flex",
                       alignItems: "center",
@@ -202,17 +205,14 @@ const BookingQueDetailsCard = ({ data }) => {
                       overflow: "hidden",
                     }}
                   >
-                    {hasLogo ? (
-                      <Box
-                        component="img"
-                        src={logoUrl}
-                        alt=""
-                        sx={{ width: 30, height: 30, objectFit: "contain" }}
-                        onError={() => setLogoErrors((p) => ({ ...p, [logoKey]: true }))}
-                      />
-                    ) : (
-                      <FlightIcon sx={{ color: "#fff", fontSize: 18 }} />
-                    )}
+                    <AirlineLogoImage
+                      carrierCode={logoCode}
+                      alt={segment.airline}
+                      size={30}
+                      fallbackIconSize={18}
+                      showCodeFallback={false}
+                      iconSx={{ color: BQ.navy, fontSize: 18 }}
+                    />
                   </Box>
 
                   <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -245,7 +245,7 @@ const BookingQueDetailsCard = ({ data }) => {
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
                       <BqTagChip>{segment.cabin}</BqTagChip>
                       <BqTagChip>
-                        {segment.baggage} / {segment.cabinBag}
+                        {segment.checkinBag} / {segment.cabinBag}
                       </BqTagChip>
                       <BqTagChip>{segment.duration}</BqTagChip>
                     </Box>

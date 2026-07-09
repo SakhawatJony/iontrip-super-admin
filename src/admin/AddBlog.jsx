@@ -381,14 +381,14 @@ export default function AddBlog() {
         const blogId = editId || blogFromState?.id;
         if (!blogId) throw new Error("Missing blog id for editing.");
         try {
-          const response = await axios.post(
+          const response = await axios.patch(
             `${API_BASE_URL}${API_ENDPOINTS.BLOG_UPDATE}/${blogId}`,
             formData,
             { headers },
           );
           showApiSuccessToast(response, "Blog updated successfully!");
         } catch {
-          const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.BLOG_UPDATE}`, formData, { headers });
+          const response = await axios.patch(`${API_BASE_URL}${API_ENDPOINTS.BLOG_UPDATE}`, formData, { headers });
           showApiSuccessToast(response, "Blog updated successfully!");
         }
       }

@@ -4,23 +4,25 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { BQ, bqCardSx } from "./bookingQueTheme.js";
 import { BqAccentTitle } from "./bookingQueUi.jsx";
 import { formatBqNumber, getPaxTypeShort } from "./bookingQueUtils.js";
+import { getPaxCountForFareRow } from "./paxTypeUtils.js";
 
 const BookingQueFareDetails = ({ data }) => {
   const pricebreakdown = data?.pricebreakdown || [];
+  const travellers = data?.travellers || [];
   const currency = data?.farecurrency || "BDT";
 
-  const totalBaseFare = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.BaseFare || 0) * parseFloat(item.PaxCount || 1),
-    0,
-  );
-  const totalTax = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.Tax || 0) * parseFloat(item.PaxCount || 1),
-    0,
-  );
+  const totalBaseFare = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.BaseFare || 0) * paxCount;
+  }, 0);
+  const totalTax = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.Tax || 0) * paxCount;
+  }, 0);
   const grandTotal = parseFloat(data?.netPrice || data?.clientFare || 0);
 
   const paxRows = pricebreakdown.map((item, idx) => {
-    const paxCount = parseFloat(item.PaxCount || 1);
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
     const lineTotal =
       (parseFloat(item.BaseFare || 0) + parseFloat(item.Tax || 0)) * paxCount +
       parseFloat(item.ServiceFee || 0) * paxCount -

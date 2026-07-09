@@ -1,5 +1,12 @@
 import React from "react";
 import { Box, Typography, Table, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
+import { getPaxCountForFareRow, getTotalTravellerCount, parsePaxType } from "./paxTypeUtils.js";
+import {
+  isAgentInvoiceDocument,
+  resolveAgentCommissionAmount,
+  resolveInvoiceAitVat,
+  resolveInvoiceGrandTotal,
+} from "./bookingQueUtils.js";
 
 const formatNumber = (num) => {
   if (!num && num !== 0) return "0.00";
@@ -9,45 +16,45 @@ const formatNumber = (num) => {
   return parts.length > 1 ? `${parts[0]}.${parts[1]}` : `${parts[0]}.00`;
 };
 
-const getPaxTypeLabel = (value) => {
-  const v = String(value || "").toUpperCase().replace(/_/g, " ");
-  if (["ADT", "ADULT"].includes(v)) return "Adult";
-  if (["CHD", "CHILD"].includes(v)) return "Child";
-  if (["INF", "INFT", "INFANT", "HELD INFANT", "HELD_INFANT"].includes(v)) return "Infant";
-  return value ? String(value).charAt(0).toUpperCase() + String(value).slice(1).toLowerCase() : "Adult";
-};
+const getPaxTypeLabel = (value) => parsePaxType(value).type;
 
-const BookingQueCustomerFareSummary = ({ data }) => {
+const BookingQueCustomerFareSummary = ({ data, invoiceType = "Customer Invoice" }) => {
   const pricebreakdown = data?.pricebreakdown || [];
+  const travellers = data?.travellers || [];
   const currency = data?.farecurrency || "BDT";
+  const documentType =
+    invoiceType === "Agent Invoice"
+      ? "agent-invoice"
+      : invoiceType === "Booking Invoice"
+        ? "booking-invoice"
+        : "customer-invoice";
+  const isAgentInvoice = isAgentInvoiceDocument(documentType);
 
-  const totalBaseFare = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.BaseFare || 0) * parseFloat(item.PaxCount || 1),
-    0
-  );
-  const totalTax = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.Tax || 0) * parseFloat(item.PaxCount || 1),
-    0
-  );
-  const totalServiceFee = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.ServiceFee || 0) * parseFloat(item.PaxCount || 1),
-    0
-  );
-  const totalDiscount = pricebreakdown.reduce(
-    (sum, item) => sum + parseFloat(item.Discount || 0) * parseFloat(item.PaxCount || 1),
-    0
-  );
-  const totalTravelerCount = pricebreakdown.reduce(
-    (sum, item) => sum + parseInt(item.PaxCount || 1, 10),
-    0
-  );
+  const totalBaseFare = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.BaseFare || 0) * paxCount;
+  }, 0);
+  const totalTax = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.Tax || 0) * paxCount;
+  }, 0);
+  const totalServiceFee = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.ServiceFee || 0) * paxCount;
+  }, 0);
+  const totalDiscount = pricebreakdown.reduce((sum, item) => {
+    const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
+    return sum + parseFloat(item.Discount || 0) * paxCount;
+  }, 0);
+  const totalTravelerCount = getTotalTravellerCount(travellers, pricebreakdown);
   const fareTotal = totalBaseFare + totalTax + totalServiceFee - totalDiscount;
-  const aitVat = parseFloat(data?.aitVat ?? data?.ait ?? data?.vat ?? 0);
+  const displayAitVat = resolveInvoiceAitVat(data, documentType);
+  const commissionAmount = isAgentInvoice ? resolveAgentCommissionAmount(data) : 0;
   const extraBaggageMealSeat = parseFloat(data?.extraBaggage ?? data?.extraBaggageMealSeat ?? 0);
   const bundleCost = parseFloat(data?.bundleCost ?? 0);
-  const calculatedPayable = fareTotal + aitVat + extraBaggageMealSeat + bundleCost;
-  const totalCustomerPayable =
-    parseFloat(data?.netPrice ?? data?.clientFare ?? "") || calculatedPayable;
+  const calculatedPayable = fareTotal + displayAitVat + extraBaggageMealSeat + bundleCost;
+  const totalCustomerPayable = resolveInvoiceGrandTotal(data, documentType, calculatedPayable);
+  const summaryTitle = isAgentInvoice ? "Agent Fare Summary" : "Customer Fare Summary";
 
   return (
     <Box sx={{ width: "100%",bgcolor:"#ffffff",px:"30px",py:"20px" }}>
@@ -59,7 +66,7 @@ const BookingQueCustomerFareSummary = ({ data }) => {
           mb: 1.5,
         }}
       >
-        Customer Fare Summary
+        {summaryTitle}
       </Typography>
       <Box
         sx={{
@@ -105,7 +112,7 @@ const BookingQueCustomerFareSummary = ({ data }) => {
               </TableRow>
             ) : (
               pricebreakdown.map((item, idx) => {
-                const paxCount = parseInt(item.PaxCount || 1, 10);
+                const paxCount = getPaxCountForFareRow(item, travellers, pricebreakdown);
                 const baseFare = parseFloat(item.BaseFare || 0) * paxCount;
                 const tax = parseFloat(item.Tax || 0) * paxCount;
                 const serviceFee = parseFloat(item.ServiceFee || 0) * paxCount;
@@ -175,10 +182,18 @@ const BookingQueCustomerFareSummary = ({ data }) => {
               {formatNumber(totalDiscount)}
             </Typography>
           </Box>
+          {isAgentInvoice ? (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Typography sx={{ fontSize: 12, color: "#6B7280" }}>Commission</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#DC2626", minWidth: 80, textAlign: "right" }}>
+                - {formatNumber(commissionAmount)}
+              </Typography>
+            </Box>
+          ) : null}
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
             <Typography sx={{ fontSize: 12, color: "#6B7280" }}>Total AIT & VAT</Typography>
             <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#1F2937", minWidth: 80, textAlign: "right" }}>
-              {formatNumber(aitVat)}
+              + {formatNumber(displayAitVat)}
             </Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
@@ -207,7 +222,7 @@ const BookingQueCustomerFareSummary = ({ data }) => {
             }}
           >
             <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#1F2937" }}>
-              Total Customer Payable
+              {isAgentInvoice ? "Total Agent Payable" : "Total Customer Payable"}
             </Typography>
             <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#1F2937" }}>
               {currency} {formatNumber(totalCustomerPayable)}

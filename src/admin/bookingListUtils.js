@@ -91,6 +91,84 @@ export function formatBookingMoney(amount, currencyCode = "BDT") {
   return `${num.toFixed(2)} ${code}`;
 }
 
+function normalizeBookingStatusKey(status) {
+  return String(status || "")
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+}
+
+function resolvePrimaryBookingStatus(booking) {
+  return booking?.status || booking?.bookingStatus || "";
+}
+
+function resolveRawBookingStatus(booking) {
+  const primary = resolvePrimaryBookingStatus(booking);
+  if (primary) return primary;
+  return booking?.refundRequest?.status || booking?.reissueRequest?.status || "";
+}
+
+export function isIssueInProcessStatus(status) {
+  const normalized = normalizeBookingStatusKey(status);
+  return normalized === "ISSUEINPROCESS" || normalized === "ISSUEINPROGRESS";
+}
+
+export function matchesHistoryStatusFilter(booking, filterStatus) {
+  const key = String(filterStatus || "").toLowerCase().trim();
+  if (!key) return true;
+
+  if (key === "issueinprocess") {
+    return isIssueInProcessStatus(resolvePrimaryBookingStatus(booking));
+  }
+
+  const normalized = normalizeBookingStatusKey(resolveRawBookingStatus(booking));
+
+  if (key === "cancelled") {
+    return normalized.includes("CANCEL") || normalized === "EXPIRED";
+  }
+
+  if (key === "reissue") {
+    return (
+      normalized.includes("REISSUE") ||
+      Boolean(
+        booking?.reissueRequestId ||
+          booking?.reissueId ||
+          booking?.reissueRequest?.id ||
+          booking?.reissue?.id,
+      )
+    );
+  }
+
+  if (key === "refund") {
+    return (
+      normalized.includes("REFUND") ||
+      Boolean(
+        booking?.refundRequestId ||
+          booking?.refundId ||
+          booking?.refundRequest?.id ||
+          booking?.refund?.id,
+      )
+    );
+  }
+
+  if (key === "ticketed") {
+    return normalized.includes("TICKETED");
+  }
+
+  if (key === "booked") {
+    return normalized === "BOOKED" || normalized === "HOLD";
+  }
+
+  if (key === "void") {
+    return normalized.includes("VOID");
+  }
+
+  if (key === "hold") {
+    return normalized.includes("HOLD");
+  }
+
+  return normalized.includes(key.toUpperCase());
+}
+
 function resolveCustomerName(booking) {
   const traveller = booking?.travellers?.[0];
   if (traveller?.firstName || traveller?.lastName) {
@@ -109,6 +187,9 @@ function resolveTicketFare(booking) {
 }
 
 export function mapBookingToTableRow(booking, currencyFallback = "BDT") {
+  const rawSystem = String(booking?.system || "").trim().toUpperCase();
+  const systemLabel =
+    rawSystem === "FLIGHTAPI-SIERRA" || rawSystem === "SABER" ? "SABRE" : booking?.system || "-";
   const currencyCode = booking?.farecurrency || currencyFallback || "BDT";
   const paxCount =
     booking?.travellers?.length ||
@@ -123,6 +204,7 @@ export function mapBookingToTableRow(booking, currencyFallback = "BDT") {
 
   return {
     bookingId: booking?.bookingId || "-",
+    system: systemLabel,
     customer: resolveCustomerName(booking),
     route: resolveBookingRoute(booking),
     type: formatTripTypeLabel(booking?.triptype),

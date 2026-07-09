@@ -230,6 +230,36 @@ export const resolvePassengerBaggageRows = (data, priceRow = {}) => {
 };
 
 /** Unwrap nested booking payload from admin booking API responses. */
+export const resolveSegmentCarrierCode = (segment = {}, data = {}) => {
+  const raw =
+    segment?.carrierCode ||
+    segment?.marketingcareer ||
+    segment?.marketingCarrier ||
+    segment?.career ||
+    data?.career ||
+    data?.careerCode ||
+    data?.airlineCode ||
+    data?.carrierCode ||
+    "";
+
+  const code = String(raw).trim().toUpperCase();
+  if (/^[A-Z0-9]{2}$/.test(code)) return code;
+
+  const flightNo = String(segment?.marketingflight || segment?.marketingFlight || "")
+    .trim()
+    .toUpperCase();
+  const fromFlight = flightNo.match(/^([A-Z0-9]{2})/)?.[1];
+  if (fromFlight) return fromFlight;
+
+  return code;
+};
+
+export const resolveBookingDisplayStatus = (data) =>
+  String(data?.status || "HOLD")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace("BOOKED", "HOLD");
+
 export const unwrapBookingResponse = (response) => {
   const payload = response?.data;
   if (!payload) return null;

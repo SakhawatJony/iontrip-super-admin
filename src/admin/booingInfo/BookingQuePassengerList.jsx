@@ -1,6 +1,8 @@
 import React from "react";
 import { Box, Typography, Grid } from "@mui/material";
 import { BQ, bqCardSx, bqLabelSx, bqValueSx } from "./bookingQueTheme.js";
+import { resolveTravellerTitle } from "./bookingQueUtils.js";
+import { sortTravellersByPaxType, parsePaxType } from "./paxTypeUtils.js";
 import { BqAccentTitle } from "./bookingQueUi.jsx";
 import { resolvePassengerBaggageRows } from "../flightItineraryUtils";
 
@@ -28,15 +30,20 @@ const BookingQuePassengerList = ({ data }) => {
     }
   };
 
-  const getTitle = (gender, title) => {
-    if (title) return String(title).toUpperCase();
-    if (gender === "MALE") return "MR";
-    if (gender === "FEMALE") return "MRS";
-    return "MR";
-  };
+  const getTitle = (traveller) => resolveTravellerTitle(traveller);
 
-  const getPaxType = (index) => pricebreakdown[index]?.PaxType || "ADULT";
+  const getPaxType = (paxType) => {
+    const { type } = parsePaxType(paxType);
+    if (type === "Adult") return "ADULT";
+    if (type === "Child") return "CHILD";
+    if (type === "Infant") return "INFANT";
+    return String(paxType || "ADULT").toUpperCase();
+  };
+  const sortedTravellers = sortTravellersByPaxType(travellers, pricebreakdown);
   const ticketNo = data?.airlinePNR || data?.gdsPNR || "N/A";
+  const hasPassportNumbers = travellers.some((traveller) =>
+    Boolean(String(traveller?.passportNumber || traveller?.passportNo || "").trim()),
+  );
 
   return (
     <Box sx={{ ...bqCardSx, p: 1.75 }}>
@@ -55,15 +62,19 @@ const BookingQuePassengerList = ({ data }) => {
         </Typography>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-          {travellers.map((traveller, index) => {
-            const fullName = [getTitle(traveller.gender, traveller.title), traveller.firstName, traveller.lastName]
+          {sortedTravellers.map(({ traveller, index, paxType }) => {
+            const fullName = [getTitle(traveller), traveller.firstName, traveller.lastName]
               .filter(Boolean)
               .join(" ");
 
             const detailFields = [
               { label: "Date of Birth", value: formatDate(traveller.dateOfBirth) },
-              { label: "Passport No", value: traveller.passportNumber || "N/A" },
-              { label: "Passport Expiry", value: formatDate(traveller.passportExpireDate) },
+              ...(hasPassportNumbers
+                ? [
+                    { label: "Passport No", value: traveller.passportNumber || traveller.passportNo || "-" },
+                    { label: "Passport Expiry", value: formatDate(traveller.passportExpireDate) },
+                  ]
+                : []),
               { label: "Nationality", value: traveller.nationality || traveller.country || "N/A" },
               { label: "Email", value: traveller.email || data?.contactEmail || "N/A" },
               { label: "Phone", value: traveller.phone || traveller.mobile || data?.contactPhone || "N/A" },
@@ -111,7 +122,7 @@ const BookingQuePassengerList = ({ data }) => {
                       {fullName}
                     </Typography>
                     <Typography sx={{ fontSize: 10, color: "rgba(255,255,255,0.78)" }}>
-                      {getPaxType(index)} · Ticket {ticketNo}
+                      {getPaxType(paxType)} · Ticket {ticketNo}
                     </Typography>
                   </Box>
                 </Box>

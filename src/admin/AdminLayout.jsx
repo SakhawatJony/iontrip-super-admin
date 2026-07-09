@@ -4,12 +4,14 @@ import Grid from "@mui/material/Grid";
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar.jsx";
 import AdminTopbar from "./AdminTopbar.jsx";
+import { DashboardFilterProvider } from "../context/DashboardFilterContext.jsx";
 
 export default function AdminLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <Box sx={{ minHeight: "100vh" }}>
+    <DashboardFilterProvider>
+      <Box sx={{ minHeight: "100vh" }}>
       <Box>
         <Grid container sx={{ minHeight: "100vh", flexWrap: { xs: "wrap", md: "nowrap" } }}>
           <Grid
@@ -56,6 +58,7 @@ export default function AdminLayout() {
           </Grid>
         </Grid>
       </Box>
-    </Box>
+      </Box>
+    </DashboardFilterProvider>
   );
 }

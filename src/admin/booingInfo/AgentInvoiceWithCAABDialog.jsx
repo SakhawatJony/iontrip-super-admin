@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import EditIcon from "@mui/icons-material/Edit";
+import { DEFAULT_CAAB_NUMBER } from "../../utils/resolveAgentPdfInfo";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 const optionSx = {
@@ -47,7 +48,9 @@ const AgentInvoiceWithCAABDialog = ({
   const [civilAviationNumber, setCivilAviationNumber] = useState("");
 
   const initialAgency = defaultAgencyName ?? user?.agentName ?? user?.name ?? user?.companyName ?? "TRIP FINDY";
-  const initialCAAB = defaultCivilAviationNumber ?? user?.caabNumber ?? user?.civilAviationNumber ?? "0014537";
+  const initialCAAB =
+    String(defaultCivilAviationNumber || user?.caabNumber || user?.civilAviationNumber || "").trim() ||
+    DEFAULT_CAAB_NUMBER;
 
   useEffect(() => {
     if (open) {

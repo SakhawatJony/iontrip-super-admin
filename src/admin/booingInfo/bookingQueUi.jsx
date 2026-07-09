@@ -31,13 +31,15 @@ export function BqAccentTitle({ title, right }) {
   );
 }
 
-export function BqStatusPill({ children, variant = "expired" }) {
+export function BqStatusPill({ children, variant = "expired", color, bg, border }) {
   const styles =
-    variant === "holdActive"
-      ? { bg: BQ.holdOrangeBg, color: "#B45309", border: `1px solid ${BQ.holdWarn}` }
-      : variant === "hold"
-        ? { bg: BQ.holdWarnBg, color: BQ.holdWarn, border: "none" }
-        : { bg: BQ.expiredBg, color: BQ.expired, border: "none" };
+    color && bg
+      ? { bg, color, border: border || "none" }
+      : variant === "holdActive"
+        ? { bg: BQ.holdOrangeBg, color: "#B45309", border: `1px solid ${BQ.holdWarn}` }
+        : variant === "hold"
+          ? { bg: BQ.holdWarnBg, color: BQ.holdWarn, border: "none" }
+          : { bg: BQ.expiredBg, color: BQ.expired, border: "none" };
   return (
     <Box
       component="span"

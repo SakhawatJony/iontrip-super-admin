@@ -33,6 +33,7 @@ import {
   resolveSierraLegSummary,
   unwrapBookingResponse,
 } from "../flightItineraryUtils.js";
+import { resolveTravellerTitle } from "./bookingQueUtils.js";
 
 const REFUND_TYPES = [
   { key: "voluntary", label: "Voluntary" },
@@ -160,11 +161,8 @@ function getInitials(traveller) {
   return (f + l).toUpperCase() || "?";
 }
 
-function getTitle(gender, title) {
-  if (title) return String(title).toUpperCase();
-  if (gender === "MALE") return "MR";
-  if (gender === "FEMALE") return "MRS";
-  return "MR";
+function getTitle(traveller) {
+  return resolveTravellerTitle(traveller);
 }
 
 function resolveRefundRequestId(bookingData, stateRefundRequestId) {
@@ -819,7 +817,7 @@ export default function BookingQueRefund() {
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
                     {travellers.map((traveller, index) => {
                       const fullName = [
-                        getTitle(traveller.gender, traveller.title),
+                        getTitle(traveller),
                         traveller.firstName,
                         traveller.lastName,
                       ]
@@ -960,6 +958,11 @@ export default function BookingQueRefund() {
         bookingId={bookingData?.bookingId || bookingId}
         token={superadminToken}
         defaultQuotedAmount={bookingData?.netPrice ?? bookingData?.clientFare ?? quotedAmount}
+        onSuccess={() =>
+          navigate("/dashboard/bookingqueuedetails", {
+            state: { bookingId: bookingData?.bookingId || bookingId },
+          })
+        }
       />
       <RefundRejectDialog
         open={rejectDialogOpen}

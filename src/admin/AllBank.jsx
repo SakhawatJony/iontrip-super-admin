@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Box, Button, Typography, CircularProgress, IconButton, Modal, TextField, Grid, Select, FormControl, MenuItem } from "@mui/material";
+import { Box, Button, Typography, CircularProgress, IconButton, Modal, TextField, Grid, Select, FormControl, MenuItem, Chip } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
+import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
+import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -36,6 +40,411 @@ const fieldSx = {
     },
   },
 };
+
+function formatBankFieldLabel(key) {
+  return String(key)
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+function formatBankFieldValue(key, value) {
+  if (value === null || value === undefined || value === "") return "N/A";
+  if (key === "isActive" || key === "active") {
+    const isActive = value === true || value === "true" || String(value).toLowerCase() === "active";
+    return isActive ? "Active" : "Inactive";
+  }
+  return String(value);
+}
+
+function BankDetailField({ label, value, highlight = false }) {
+  return (
+    <Box
+      sx={{
+        p: 1.25,
+        borderRadius: "10px",
+        bgcolor: highlight ? "rgba(2, 77, 175, 0.06)" : "#F8FAFC",
+        border: "1px solid",
+        borderColor: highlight ? "rgba(2, 77, 175, 0.18)" : "#EEF2F7",
+        height: "100%",
+      }}
+    >
+      <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#64748B", mb: 0.4 }}>
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: highlight ? 15 : 14,
+          fontWeight: highlight ? 800 : 700,
+          color: highlight ? "#024DAF" : "#0F172A",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.35,
+          wordBreak: "break-word",
+        }}
+      >
+        {value || "N/A"}
+      </Typography>
+    </Box>
+  );
+}
+
+function BankSectionHeading({ icon, title, subtitle }) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1.5 }}>
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: "10px",
+          bgcolor: "rgba(2, 77, 175, 0.1)",
+          color: "#024DAF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 14, fontWeight: 800, color: "#0F2F56", lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        {subtitle ? (
+          <Typography sx={{ fontSize: 11.5, color: "#64748B", mt: 0.15 }}>{subtitle}</Typography>
+        ) : null}
+      </Box>
+    </Box>
+  );
+}
+
+function BankDetailsModal({ open, bank, onClose, getStatusColors }) {
+  if (!bank) return null;
+
+  const isActive =
+    bank.isActive === true ||
+    bank.isActive === "true" ||
+    String(bank.isActive).toLowerCase() === "active";
+  const statusColors = getStatusColors(isActive);
+
+  const accountFields = [
+    { key: "bankName", label: "Bank Name" },
+    { key: "accountHolderName", label: "Account Holder Name" },
+    { key: "accountNumber", label: "Account Number", highlight: true },
+    { key: "branchName", label: "Branch Name" },
+  ];
+
+  const codeFields = [
+    { key: "swiftCode", label: "Swift Code" },
+    { key: "routingNumber", label: "Routing Number" },
+    { key: "currency", label: "Currency", highlight: true },
+  ];
+
+  const settingFields = [
+    { key: "id", label: "ID" },
+    { key: "label", label: "Label" },
+    { key: "displayOrder", label: "Display Order" },
+    { key: "isActive", label: "Status" },
+  ];
+
+  const knownKeys = new Set(
+    [...accountFields, ...codeFields, ...settingFields].map((field) => field.key),
+  );
+
+  const extraFields = Object.entries(bank).filter(([key]) => !knownKeys.has(key));
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 2,
+        backdropFilter: "blur(2px)",
+      }}
+    >
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 760,
+          maxHeight: "90vh",
+          bgcolor: "#fff",
+          borderRadius: "16px",
+          outline: "none",
+          overflow: "hidden",
+          boxShadow: "0 24px 60px rgba(15, 47, 86, 0.22)",
+          border: "1px solid #E2E8F0",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box
+          sx={{
+            px: 2.5,
+            py: 2.25,
+            background: "linear-gradient(135deg, #024DAF 0%, #0F2F56 100%)",
+            color: "#fff",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: -36,
+              right: 48,
+              width: 140,
+              height: 140,
+              borderRadius: "50%",
+              bgcolor: "rgba(255,255,255,0.07)",
+            }}
+          />
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1.5,
+              mb: 1.5,
+              position: "relative",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "12px",
+                  bgcolor: "rgba(255,255,255,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <AccountBalanceOutlinedIcon sx={{ fontSize: 22, color: "#fff" }} />
+              </Box>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2 }}>
+                Bank Details
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={onClose}
+              aria-label="Close"
+              sx={{
+                color: "#fff",
+                bgcolor: "rgba(255,255,255,0.14)",
+                flexShrink: 0,
+                "&:hover": { bgcolor: "rgba(255,255,255,0.24)" },
+              }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1.3, position: "relative", mb: 1.25 }}>
+            {bank.bankName || "Bank Account"}
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap", mt: 1.25, position: "relative" }}>
+            {bank.currency ? (
+              <Chip
+                label={bank.currency}
+                size="small"
+                sx={{
+                  height: 26,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  bgcolor: "rgba(255,255,255,0.16)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                }}
+              />
+            ) : null}
+            <Chip
+              label={isActive ? "Active" : "Inactive"}
+              size="small"
+              sx={{
+                height: 26,
+                fontSize: 11,
+                fontWeight: 700,
+                bgcolor: statusColors.bg,
+                color: statusColors.color,
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+            />
+            {bank.label ? (
+              <Chip
+                label={bank.label}
+                size="small"
+                sx={{
+                  height: 26,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                }}
+              />
+            ) : null}
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            p: 2.5,
+            overflowY: "auto",
+            bgcolor: "#FAFBFC",
+            "&::-webkit-scrollbar": { width: 6 },
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: "rgba(2, 77, 175, 0.28)",
+              borderRadius: 999,
+            },
+          }}
+        >
+          <Box sx={{ mb: 2.5 }}>
+            <BankSectionHeading
+              icon={<AccountBalanceOutlinedIcon sx={{ fontSize: 18 }} />}
+              title="Account Information"
+              subtitle={bank.accountHolderName || "Account holder details"}
+            />
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+                bgcolor: "#FFFFFF",
+                boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 1,
+                }}
+              >
+                {accountFields.map((field) => (
+                  <BankDetailField
+                    key={field.key}
+                    label={field.label}
+                    value={formatBankFieldValue(field.key, bank[field.key])}
+                    highlight={field.highlight}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ mb: 2.5 }}>
+            <BankSectionHeading
+              icon={<CreditCardOutlinedIcon sx={{ fontSize: 18 }} />}
+              title="Bank Codes"
+              subtitle="Swift, routing, and currency"
+            />
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+                bgcolor: "#FFFFFF",
+                boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" },
+                  gap: 1,
+                }}
+              >
+                {codeFields.map((field) => (
+                  <BankDetailField
+                    key={field.key}
+                    label={field.label}
+                    value={formatBankFieldValue(field.key, bank[field.key])}
+                    highlight={field.highlight}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ mb: extraFields.length > 0 ? 2.5 : 0 }}>
+            <BankSectionHeading
+              icon={<SettingsOutlinedIcon sx={{ fontSize: 18 }} />}
+              title="Settings"
+              subtitle="Display and status configuration"
+            />
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+                bgcolor: "#FFFFFF",
+                boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 1,
+                }}
+              >
+                {settingFields.map((field) => (
+                  <BankDetailField
+                    key={field.key}
+                    label={field.label}
+                    value={formatBankFieldValue(field.key, bank[field.key])}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          {extraFields.length > 0 ? (
+            <Box>
+              <BankSectionHeading
+                icon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />}
+                title="Additional Fields"
+                subtitle="Other bank metadata"
+              />
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: "12px",
+                  border: "1px solid #E2E8F0",
+                  bgcolor: "#FFFFFF",
+                  boxShadow: "0 2px 8px rgba(15, 47, 86, 0.04)",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 1,
+                  }}
+                >
+                  {extraFields.map(([key, value]) => (
+                    <BankDetailField
+                      key={key}
+                      label={formatBankFieldLabel(key)}
+                      value={formatBankFieldValue(key, value)}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          ) : null}
+        </Box>
+      </Box>
+    </Modal>
+  );
+}
 
 const AllBank = ({ title = "All Bank" }) => {
   const navigate = useNavigate();
@@ -908,65 +1317,12 @@ const AllBank = ({ title = "All Bank" }) => {
         </Box>
       </Box>
 
-      {/* Details Modal */}
-      <Modal
+      <BankDetailsModal
         open={modalOpen}
+        bank={selectedBank}
         onClose={handleCloseDetailsModal}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Box
-          sx={{
-            position: "relative",
-            maxWidth: "800px",
-            maxHeight: "90vh",
-            bgcolor: "white",
-            borderRadius: 2,
-            p: 3,
-            outline: "none",
-            overflowY: "auto",
-            width: "90%",
-          }}
-        >
-          <IconButton
-            onClick={handleCloseDetailsModal}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              bgcolor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              "&:hover": {
-                bgcolor: "rgba(0, 0, 0, 0.7)",
-              },
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-
-          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: "#0F172A" }}>
-            Bank Details
-          </Typography>
-
-          {selectedBank && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {Object.entries(selectedBank).map(([key, value]) => (
-                <Box key={key}>
-                  <Typography sx={{ fontSize: 12, color: "#6B7280", mb: 0.5 }}>
-                    {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()).trim()}
-                  </Typography>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
-                    {value !== null && value !== undefined ? String(value) : "N/A"}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-      </Modal>
+        getStatusColors={getStatusColors}
+      />
 
       {/* Add Bank Modal */}
       <Modal
