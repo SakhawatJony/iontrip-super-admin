@@ -55,33 +55,64 @@ export function normalizeAgentListResponse(response) {
   return { agentInfo, list };
 }
 
+function pickNonEmpty(...values) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      return typeof value === "string" ? value.trim() : value;
+    }
+  }
+  return "";
+}
+
 export function resolveAgentPdfHeader(agentInfo, caabInfo, data, options = {}) {
   const { includeDefaultCaab = false } = options;
   const bookingAgent = normalizeAgentProfile(data?.agent);
+  const hasBookingAgent = Boolean(data?.agent && typeof data.agent === "object");
+  // Booking agent is source of truth; agentInfo only fills gaps.
   const agent = mergeAgentProfiles(agentInfo, bookingAgent);
 
-  const resolvedCaab =
-    caabInfo?.civilAviationNumber ||
-    agent?.civilAviationNumber ||
-    agent?.caabNumber ||
-    data?.civilAviationNumber ||
-    "";
+  const resolvedCaab = pickNonEmpty(
+    caabInfo?.civilAviationNumber,
+    bookingAgent?.civilAviationNumber,
+    agent?.civilAviationNumber,
+    data?.civilAviationNumber,
+  );
 
   const civilAviationNumber =
     String(resolvedCaab || "").trim() || (includeDefaultCaab ? DEFAULT_CAAB_NUMBER : "");
 
-  const agencyName =
-    caabInfo?.agencyName ||
-    agent?.companyName ||
-    agent?.name ||
-    data?.agencyName ||
-    "";
+  const agencyName = pickNonEmpty(
+    caabInfo?.agencyName,
+    bookingAgent?.companyName,
+    bookingAgent?.name,
+    agent?.companyName,
+    agent?.name,
+    data?.agencyName,
+  );
 
-  const companyAddress = agent?.companyAddress || data?.companyAddress || "";
-  const contactPhone = agent?.mobile || agent?.phone || data?.agentMobile || data?.agent?.mobile || "";
-  const supportEmail =
-    agent?.email || data?.agent?.email || data?.supportEmail || data?.contactEmail || "";
-  const logoUrl = agent?.logoUrl || data?.logoUrl || data?.agent?.logoUrl || "";
+  const companyAddress = pickNonEmpty(
+    bookingAgent?.companyAddress,
+    agent?.companyAddress,
+    data?.companyAddress,
+  );
+  const contactPhone = pickNonEmpty(
+    bookingAgent?.mobile,
+    agent?.mobile,
+    data?.agentMobile,
+    data?.agent?.mobile,
+  );
+  const supportEmail = pickNonEmpty(
+    bookingAgent?.email,
+    agent?.email,
+    data?.agent?.email,
+    data?.supportEmail,
+    data?.contactEmail,
+  );
+
+  // When booking includes an agent object, use its logo only (null/empty => initials, never stale logo).
+  const logoUrl = hasBookingAgent
+    ? pickNonEmpty(bookingAgent?.logoUrl)
+    : pickNonEmpty(agent?.logoUrl, data?.logoUrl);
 
   return {
     agencyName: agencyName || "IONTRIP & TRAVEL LTD.",

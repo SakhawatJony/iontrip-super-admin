@@ -34,6 +34,8 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
 import FlashOnOutlinedIcon from "@mui/icons-material/FlashOnOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -166,12 +168,6 @@ function normalizeProcessingSpeed(value) {
 }
 
 const CURRENCIES = ["BDT", "NPR", "USD", "INR", "AED", "EUR", "GBP"];
-const COUNTRIES = [
-  "Afghanistan", "Australia", "Bangladesh", "Bhutan", "Canada", "China", "France", "Germany",
-  "India", "Indonesia", "Japan", "Malaysia", "Maldives", "Nepal", "Pakistan", "Philippines",
-  "Qatar", "Saudi Arabia", "Singapore", "South Korea", "Sri Lanka", "Thailand", "Turkey",
-  "United Arab Emirates", "United Kingdom", "United States", "Vietnam",
-].sort();
 
 const TABS = [
   { id: "general", label: "General Info", icon: InfoOutlinedIcon },
@@ -199,27 +195,101 @@ function formatVariantTotal(row) {
   return calcVariantTotal(row).toFixed(2);
 }
 
-const emptyRequirement = () => "";
+const emptyRequirementGroup = () => ({
+  occupation: "",
+  requirements: [""],
+});
+
+function normalizeRequirementItems(rawItems) {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) return [""];
+  const items = rawItems
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      return String(item?.documents || item?.requirement || item?.text || "").trim();
+    })
+    .filter(Boolean);
+  return items.length > 0 ? items : [""];
+}
 
 function normalizeRequirements(raw) {
-  if (Array.isArray(raw?.requirements) && raw.requirements.length > 0) {
-    const items = raw.requirements.map((item) => String(item || "").trim()).filter(Boolean);
-    return items.length > 0 ? items : [emptyRequirement()];
-  }
+  // New nested format: [{ occupation, requirements: string[] }]
   if (Array.isArray(raw) && raw.length > 0) {
-    const items = raw
+    const looksNested = raw.some(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        (Object.prototype.hasOwnProperty.call(row, "occupation") ||
+          (Array.isArray(row.requirements) && typeof row.requirements[0] !== "undefined")),
+    );
+
+    if (looksNested) {
+      const groups = raw
+        .map((row) => {
+          if (typeof row === "string") {
+            const text = row.trim();
+            return text ? { occupation: "General", requirements: [text] } : null;
+          }
+          const occupation = String(
+            row?.occupation || row?.profession || row?.title || "",
+          ).trim();
+          const requirements = normalizeRequirementItems(
+            Array.isArray(row?.requirements)
+              ? row.requirements
+              : row?.documents != null
+                ? [row.documents]
+                : [],
+          );
+          if (!occupation && requirements.every((item) => !String(item || "").trim())) {
+            return null;
+          }
+          return {
+            occupation,
+            requirements,
+          };
+        })
+        .filter(Boolean);
+
+      return groups.length > 0 ? groups : [emptyRequirementGroup()];
+    }
+
+    // Legacy flat string list
+    const flat = raw
       .map((row) => {
         if (typeof row === "string") return row.trim();
         return String(row?.documents || row?.requirement || row?.text || "").trim();
       })
       .filter(Boolean);
-    return items.length > 0 ? items : [emptyRequirement()];
+
+    if (flat.length > 0) {
+      return [{ occupation: "General", requirements: flat }];
+    }
   }
-  if (raw && typeof raw === "object") {
-    const value = String(raw.documents || raw.requirement || "").trim();
-    return value ? [value] : [emptyRequirement()];
+
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    if (Array.isArray(raw.requirements)) {
+      return normalizeRequirements(raw.requirements);
+    }
+    const occupation = String(raw.occupation || raw.profession || "").trim();
+    const documents = String(raw.documents || raw.requirement || "").trim();
+    if (occupation || documents) {
+      return [
+        {
+          occupation: occupation || "General",
+          requirements: documents ? [documents] : [""],
+        },
+      ];
+    }
   }
-  return [emptyRequirement()];
+
+  return [emptyRequirementGroup()];
+}
+
+function normalizeRequirementsFromVisa(visa) {
+  if (!visa) return [emptyRequirementGroup()];
+  if (Array.isArray(visa.requirements) && visa.requirements.length > 0) {
+    return normalizeRequirements(visa.requirements);
+  }
+  return normalizeRequirements(visa.visaRequiredDocuments);
 }
 
 const C = {
@@ -303,6 +373,167 @@ const checkboxSx = {
   "&.Mui-checked": { color: C.secondary },
 };
 
+const countryPaperSx = {
+  mt: 0.75,
+  borderRadius: 2,
+  border: `1px solid ${C.border}`,
+  boxShadow: "0 12px 32px rgba(15, 47, 86, 0.12)",
+  overflow: "hidden",
+};
+
+const countryListboxSx = {
+  py: 0.75,
+  maxHeight: 280,
+  "& .MuiAutocomplete-option": {
+    minHeight: 44,
+    px: 1.25,
+    py: 0.85,
+    mx: 0.75,
+    my: 0.25,
+    borderRadius: 1.25,
+    gap: 1,
+    transition: "background-color 0.15s ease, color 0.15s ease",
+    '&[aria-selected="true"]': {
+      bgcolor: "rgba(2, 77, 175, 0.08)",
+    },
+    "&.Mui-focused, &:hover": {
+      bgcolor: "rgba(2, 77, 175, 0.1)",
+    },
+  },
+};
+
+function CountrySelectOption({ option, selected }) {
+  const code = String(option?.code || "").toUpperCase();
+  const name = String(option?.name || "");
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: 1.25,
+          bgcolor: selected ? "rgba(2, 77, 175, 0.14)" : "#EFF6FF",
+          color: C.secondary,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          border: `1px solid ${selected ? "rgba(2, 77, 175, 0.28)" : "#DBEAFE"}`,
+        }}
+      >
+        {code ? (
+          <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.4, lineHeight: 1 }}>
+            {code}
+          </Typography>
+        ) : (
+          <PublicOutlinedIcon sx={{ fontSize: 18 }} />
+        )}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontSize: 13.5,
+            fontWeight: selected ? 700 : 600,
+            color: C.primary,
+            lineHeight: 1.25,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {name}
+        </Typography>
+        {code ? (
+          <Typography sx={{ fontSize: 11, color: C.muted, mt: 0.15, fontWeight: 500 }}>
+            Country code · {code}
+          </Typography>
+        ) : null}
+      </Box>
+      {selected ? (
+        <CheckRoundedIcon sx={{ fontSize: 18, color: C.secondary, flexShrink: 0 }} />
+      ) : null}
+    </Box>
+  );
+}
+
+function CountryAutocompleteField({
+  value,
+  options,
+  loading,
+  onChange,
+  placeholder = "Select Country",
+}) {
+  const selectedOption =
+    options.find((item) => item.name === value) || (value ? { name: value, code: "" } : null);
+
+  return (
+    <Autocomplete
+      options={options}
+      value={selectedOption}
+      loading={loading}
+      getOptionLabel={(option) => option?.name || ""}
+      isOptionEqualToValue={(option, val) => option?.name === val?.name}
+      onChange={(_, next) => onChange(next?.name || "")}
+      PaperProps={{ sx: countryPaperSx }}
+      ListboxProps={{ sx: countryListboxSx }}
+      renderOption={(props, option, { selected }) => {
+        const { key, ...rest } = props;
+        return (
+          <Box component="li" key={key} {...rest}>
+            <CountrySelectOption option={option} selected={selected} />
+          </Box>
+        );
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          placeholder={loading ? "Loading countries…" : placeholder}
+          sx={fieldSx}
+          InputProps={{
+            ...params.InputProps,
+            startAdornment: (
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    pl: 0.5,
+                    pr: 0.25,
+                    color: C.secondary,
+                  }}
+                >
+                  <PublicOutlinedIcon sx={{ fontSize: 18 }} />
+                </Box>
+                {params.InputProps.startAdornment}
+              </>
+            ),
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress color="inherit" size={16} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+        />
+      )}
+      noOptionsText={
+        <Typography sx={{ fontSize: 13, color: C.muted, px: 1, py: 0.5 }}>
+          No countries found
+        </Typography>
+      }
+    />
+  );
+}
+
 const readOnlyFieldSx = {
   ...fieldSx,
   "& .MuiOutlinedInput-root": {
@@ -339,14 +570,6 @@ function showApiSuccessToast(response, fallback = "Visa saved successfully.") {
     return;
   }
   toast.success(fallback);
-}
-
-function normalizeRequirementsFromVisa(visa) {
-  if (!visa) return [emptyRequirement()];
-  if (Array.isArray(visa.requirements) && visa.requirements.length > 0) {
-    return normalizeRequirements(visa.requirements);
-  }
-  return normalizeRequirements(visa.visaRequiredDocuments);
 }
 
 function normalizePricingVariants(raw) {
@@ -803,9 +1026,88 @@ export default function AddVisa() {
   const [arrivalCountry, setArrivalCountry] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
 
   const [pricingVariants, setPricingVariants] = useState([emptyPricingVariant()]);
-  const [requirements, setRequirements] = useState([emptyRequirement()]);
+  const [requirements, setRequirements] = useState([emptyRequirementGroup()]);
+
+  useEffect(() => {
+    const authToken = token || localStorage.getItem("adminToken") || "";
+    if (!authToken) {
+      setCountryOptions([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const fetchAllCountries = async () => {
+      setCountriesLoading(true);
+      try {
+        const limit = 100;
+        let page = 1;
+        let totalPages = 1;
+        const all = [];
+
+        do {
+          const params = new URLSearchParams({
+            page: String(page),
+            limit: String(limit),
+          });
+          const response = await axios.get(
+            `${API_BASE_URL}${API_ENDPOINTS.COUNTRIES}?${params.toString()}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                "Content-Type": "application/json",
+              },
+              signal: controller.signal,
+            },
+          );
+
+          const body = response?.data || {};
+          const list = Array.isArray(body)
+            ? body
+            : Array.isArray(body?.data)
+              ? body.data
+              : Array.isArray(body?.countries)
+                ? body.countries
+                : [];
+
+          all.push(...list);
+          totalPages = Math.max(1, Number(body.totalPages) || 1);
+          page += 1;
+        } while (page <= totalPages);
+
+        const byName = new Map();
+        all
+          .filter((item) => item?.isActive !== false && item?.is_active !== false)
+          .forEach((item) => {
+            const name = String(item?.name || "").trim();
+            if (!name || byName.has(name)) return;
+            byName.set(name, {
+              name,
+              code: String(item?.code || "").trim().toUpperCase(),
+            });
+          });
+
+        const countries = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+        setCountryOptions(countries);
+      } catch (err) {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") {
+          return;
+        }
+        console.error("Fetch countries failed:", err?.response?.data || err);
+        toast.error(err?.response?.data?.message || "Failed to load countries.");
+        setCountryOptions([]);
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchAllCountries();
+    return () => controller.abort();
+  }, [token]);
 
   useEffect(() => {
     if (!isEditing || !visaFromState) return;
@@ -836,20 +1138,54 @@ export default function AddVisa() {
     setPricingVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateRequirement = (index, value) => {
-    setRequirements((prev) => prev.map((item, i) => (i === index ? value : item)));
+  const updateOccupation = (groupIndex, value) => {
+    setRequirements((prev) =>
+      prev.map((group, i) => (i === groupIndex ? { ...group, occupation: value } : group)),
+    );
   };
 
-  const addRequirement = () => {
-    setRequirements((prev) => [...prev, emptyRequirement()]);
+  const updateRequirementItem = (groupIndex, itemIndex, value) => {
+    setRequirements((prev) =>
+      prev.map((group, i) => {
+        if (i !== groupIndex) return group;
+        return {
+          ...group,
+          requirements: group.requirements.map((item, j) => (j === itemIndex ? value : item)),
+        };
+      }),
+    );
   };
 
-  const removeRequirement = (index) => {
-    if (requirements.length <= 1) {
-      setRequirements([emptyRequirement()]);
-      return;
-    }
-    setRequirements((prev) => prev.filter((_, i) => i !== index));
+  const addRequirementItem = (groupIndex) => {
+    setRequirements((prev) =>
+      prev.map((group, i) =>
+        i === groupIndex ? { ...group, requirements: [...group.requirements, ""] } : group,
+      ),
+    );
+  };
+
+  const removeRequirementItem = (groupIndex, itemIndex) => {
+    setRequirements((prev) =>
+      prev.map((group, i) => {
+        if (i !== groupIndex) return group;
+        const nextItems = group.requirements.filter((_, j) => j !== itemIndex);
+        return {
+          ...group,
+          requirements: nextItems.length > 0 ? nextItems : [""],
+        };
+      }),
+    );
+  };
+
+  const addOccupationGroup = () => {
+    setRequirements((prev) => [...prev, emptyRequirementGroup()]);
+  };
+
+  const removeOccupationGroup = (groupIndex) => {
+    setRequirements((prev) => {
+      if (prev.length <= 1) return [emptyRequirementGroup()];
+      return prev.filter((_, i) => i !== groupIndex);
+    });
   };
 
   const buildPayload = () => {
@@ -868,7 +1204,12 @@ export default function AddVisa() {
         totalPrice: calcVariantTotal(row),
         currency: String(row.currency || "BDT").trim(),
       })),
-      requirements: requirements.map((text) => text.trim()).filter(Boolean),
+      requirements: requirements
+        .map((group) => ({
+          occupation: String(group.occupation || "").trim(),
+          requirements: (group.requirements || []).map((text) => String(text || "").trim()).filter(Boolean),
+        }))
+        .filter((group) => group.occupation && group.requirements.length > 0),
     };
 
     return payload;
@@ -919,11 +1260,31 @@ export default function AddVisa() {
       }
     }
 
-    const filledRequirements = requirements.map((text) => text.trim()).filter(Boolean);
-    if (filledRequirements.length === 0) {
-      toast.error("Add at least one requirement.");
+    const filledGroups = requirements
+      .map((group) => ({
+        occupation: String(group.occupation || "").trim(),
+        requirements: (group.requirements || []).map((text) => String(text || "").trim()).filter(Boolean),
+      }))
+      .filter((group) => group.occupation || group.requirements.length > 0);
+
+    if (filledGroups.length === 0) {
+      toast.error("Add at least one occupation with requirements.");
       setActiveTab(2);
       return false;
+    }
+
+    for (let i = 0; i < filledGroups.length; i += 1) {
+      const group = filledGroups[i];
+      if (!group.occupation) {
+        toast.error(`Occupation group ${i + 1}: occupation is required.`);
+        setActiveTab(2);
+        return false;
+      }
+      if (group.requirements.length === 0) {
+        toast.error(`"${group.occupation}": add at least one requirement.`);
+        setActiveTab(2);
+        return false;
+      }
     }
 
     return true;
@@ -975,38 +1336,24 @@ export default function AddVisa() {
           <Typography sx={labelSx}>
             From Country <span style={{ color: C.danger }}>*</span>
           </Typography>
-          <Autocomplete
-            freeSolo
-            options={COUNTRIES}
+          <CountryAutocompleteField
             value={departureCountry}
-            onChange={(_, value) => setDepartureCountry(value || "")}
-            onInputChange={(_, value) => setDepartureCountry(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Select Country"
-                sx={fieldSx}
-              />
-            )}
+            options={countryOptions}
+            loading={countriesLoading}
+            onChange={setDepartureCountry}
+            placeholder="Select from country"
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography sx={labelSx}>
             To Country <span style={{ color: C.danger }}>*</span>
           </Typography>
-          <Autocomplete
-            freeSolo
-            options={COUNTRIES}
+          <CountryAutocompleteField
             value={arrivalCountry}
-            onChange={(_, value) => setArrivalCountry(value || "")}
-            onInputChange={(_, value) => setArrivalCountry(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Select Country"
-                sx={fieldSx}
-              />
-            )}
+            options={countryOptions}
+            loading={countriesLoading}
+            onChange={setArrivalCountry}
+            placeholder="Select to country"
           />
         </Grid>
         <Grid item xs={12}>
@@ -1096,52 +1443,159 @@ export default function AddVisa() {
         sx={{
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: 1,
           px: 2,
           pt: 2,
           pb: 1,
+          flexWrap: "wrap",
         }}
       >
-        <FactCheckOutlinedIcon sx={{ fontSize: 20, color: C.secondary }} />
-        <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary }}>
-          Visa Requirements
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <FactCheckOutlinedIcon sx={{ fontSize: 20, color: C.secondary }} />
+          <Box>
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary, lineHeight: 1.2 }}>
+              Visa Requirements
+            </Typography>
+            <Typography sx={{ fontSize: 11.5, color: C.muted, mt: 0.25 }}>
+              Group documents by occupation
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
-      <Box sx={{ px: 2, pb: 2 }}>
-        {requirements.map((requirement, index) => (
+      <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 1.75 }}>
+        {requirements.map((group, groupIndex) => (
           <Box
-            key={`requirement-${index}`}
+            key={`occupation-group-${groupIndex}`}
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              mb: 1.5,
+              border: `1px solid ${C.border}`,
+              borderRadius: 2,
+              bgcolor: "#FFFFFF",
+              overflow: "hidden",
+              boxShadow: "0 2px 10px rgba(15, 47, 86, 0.04)",
             }}
           >
-            <TextField
-              fullWidth
-              placeholder="Enter Requirement"
-              value={requirement}
-              onChange={(e) => updateRequirement(index, e.target.value)}
-              sx={fieldSx}
-            />
-            <IconButton
-              type="button"
-              onClick={() => removeRequirement(index)}
-              aria-label={`Remove requirement ${index + 1}`}
+            <Box
               sx={{
-                width: INPUT_HEIGHT,
-                height: INPUT_HEIGHT,
-                borderRadius: 1,
-                bgcolor: C.primary,
-                color: "#FFFFFF",
-                flexShrink: 0,
-                "&:hover": { bgcolor: "#0A2540" },
+                px: 1.75,
+                py: 1.35,
+                bgcolor: "rgba(2, 77, 175, 0.05)",
+                borderBottom: `1px solid ${C.border}`,
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 1,
               }}
             >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ ...labelSx, mb: 0.65 }}>
+                  Occupation <span style={{ color: C.danger }}>*</span>
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="e.g. Software Engineer"
+                  value={group.occupation}
+                  onChange={(e) => updateOccupation(groupIndex, e.target.value)}
+                  sx={fieldSx}
+                />
+              </Box>
+              <IconButton
+                type="button"
+                onClick={() => removeOccupationGroup(groupIndex)}
+                aria-label={`Remove occupation group ${groupIndex + 1}`}
+                sx={{
+                  width: INPUT_HEIGHT,
+                  height: INPUT_HEIGHT,
+                  borderRadius: 1,
+                  bgcolor: "#FEF2F2",
+                  color: C.danger,
+                  flexShrink: 0,
+                  mb: 0.1,
+                  border: "1px solid #FECACA",
+                  "&:hover": { bgcolor: "#FEE2E2" },
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ p: 1.75 }}>
+              <Typography sx={{ ...labelSx, mb: 1 }}>
+                Requirements <span style={{ color: C.danger }}>*</span>
+              </Typography>
+
+              {(group.requirements || []).map((item, itemIndex) => (
+                <Box
+                  key={`requirement-${groupIndex}-${itemIndex}`}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 1.15,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      bgcolor: "#EAF2FF",
+                      color: C.secondary,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {itemIndex + 1}
+                  </Box>
+                  <TextField
+                    fullWidth
+                    placeholder="e.g. Valid passport"
+                    value={item}
+                    onChange={(e) => updateRequirementItem(groupIndex, itemIndex, e.target.value)}
+                    sx={fieldSx}
+                  />
+                  <IconButton
+                    type="button"
+                    onClick={() => removeRequirementItem(groupIndex, itemIndex)}
+                    aria-label={`Remove requirement ${itemIndex + 1}`}
+                    sx={{
+                      width: INPUT_HEIGHT,
+                      height: INPUT_HEIGHT,
+                      borderRadius: 1,
+                      bgcolor: C.primary,
+                      color: "#FFFFFF",
+                      flexShrink: 0,
+                      "&:hover": { bgcolor: "#0A2540" },
+                    }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => addRequirementItem(groupIndex)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: 12.5,
+                  borderRadius: 1.25,
+                  borderColor: "#BFDBFE",
+                  color: C.secondary,
+                  bgcolor: "#F8FBFF",
+                  "&:hover": { borderColor: C.secondary, bgcolor: "#EFF6FF" },
+                }}
+              >
+                Add Requirement
+              </Button>
+            </Box>
           </Box>
         ))}
 
@@ -1150,7 +1604,7 @@ export default function AddVisa() {
           fullWidth
           variant="contained"
           startIcon={<AddCircleOutlineIcon />}
-          onClick={addRequirement}
+          onClick={addOccupationGroup}
           sx={{
             textTransform: "none",
             fontWeight: 700,
@@ -1162,7 +1616,7 @@ export default function AddVisa() {
             "&:hover": { bgcolor: "#0A2540", boxShadow: "none" },
           }}
         >
-          Add Requirement
+          Add Occupation
         </Button>
       </Box>
     </Box>

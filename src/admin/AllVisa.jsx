@@ -48,10 +48,92 @@ function showApiErrorToasts(err, fallback = "Failed to load visas.") {
 }
 
 function normalizeDocumentRequirements(item) {
+  const nested = Array.isArray(item?.requirements) ? item.requirements : null;
+  if (
+    nested &&
+    nested.length > 0 &&
+    nested.some(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        (row.occupation != null || Array.isArray(row.requirements)),
+    )
+  ) {
+    return nested
+      .map((row) => {
+        if (typeof row === "string") {
+          const text = row.trim();
+          return text
+            ? {
+                profession: "General",
+                documents: text,
+                exceptionalCase: "",
+                note: "",
+                items: [text],
+              }
+            : null;
+        }
+        const items = Array.isArray(row?.requirements)
+          ? row.requirements.map((text) => String(text || "").trim()).filter(Boolean)
+          : String(row?.documents || "")
+              .split(/[,;|]/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+        const occupation = String(row?.occupation || row?.profession || "Requirement").trim();
+        if (!occupation && items.length === 0) return null;
+        return {
+          profession: occupation || "Requirement",
+          documents: items.join(", "),
+          exceptionalCase: row?.exceptionalCase || "",
+          note: row?.note || "",
+          items,
+        };
+      })
+      .filter(Boolean);
+  }
+
   const raw = item?.visaRequiredDocuments;
-  if (Array.isArray(raw) && raw.length > 0) return raw.filter(Boolean);
-  if (raw && typeof raw === "object" && (raw.profession || raw.documents || raw.exceptionalCase || raw.note)) {
-    return [raw];
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw
+      .map((row) => {
+        if (typeof row === "string") {
+          return {
+            profession: "Requirement",
+            documents: row,
+            exceptionalCase: "",
+            note: "",
+            items: [row],
+          };
+        }
+        const items = Array.isArray(row?.requirements)
+          ? row.requirements.map((text) => String(text || "").trim()).filter(Boolean)
+          : String(row?.documents || "")
+              .split(/[,;|]/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+        return {
+          profession: row?.occupation || row?.profession || "Requirement",
+          documents: items.join(", ") || row?.documents || "",
+          exceptionalCase: row?.exceptionalCase || "",
+          note: row?.note || "",
+          items,
+        };
+      })
+      .filter(Boolean);
+  }
+  if (raw && typeof raw === "object" && (raw.profession || raw.documents || raw.exceptionalCase || raw.note || raw.occupation)) {
+    return [
+      {
+        profession: raw.occupation || raw.profession || "Requirement",
+        documents: raw.documents || "",
+        exceptionalCase: raw.exceptionalCase || "",
+        note: raw.note || "",
+        items: String(raw.documents || "")
+          .split(/[,;|]/)
+          .map((s) => s.trim())
+          .filter(Boolean),
+      },
+    ];
   }
   if (Array.isArray(item?.requirements) && item.requirements.length > 0) {
     return item.requirements
@@ -62,8 +144,48 @@ function normalizeDocumentRequirements(item) {
         documents: text,
         exceptionalCase: "",
         note: "",
+        items: [text],
       }));
   }
+  return [];
+}
+
+function getDocumentEntries(visa) {
+  const nestedGroups = normalizeDocumentRequirements(visa);
+  if (nestedGroups.length > 0) {
+    const fromGroups = nestedGroups.flatMap((group) =>
+      Array.isArray(group.items) && group.items.length > 0
+        ? group.items
+        : String(group.documents || "")
+            .split(/[,;|]/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+    );
+    if (fromGroups.length > 0) return fromGroups;
+  }
+
+  if (Array.isArray(visa?.requirements) && visa.requirements.length > 0) {
+    return visa.requirements
+      .flatMap((row) => {
+        if (typeof row === "string") return [row.trim()];
+        if (Array.isArray(row?.requirements)) {
+          return row.requirements.map((text) => String(text || "").trim());
+        }
+        return [String(row?.documents || row?.requirement || "").trim()];
+      })
+      .filter(Boolean);
+  }
+
+  const raw = visa?.documents;
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
+  if (typeof raw === "string") {
+    return raw
+      .split(/[,;|]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   return [];
 }
 
@@ -102,36 +224,6 @@ function getVariantOptions(item) {
     totalPrice: row?.cost,
     currency: row?.serviceCharge || "NPR",
   }));
-}
-
-function getDocumentEntries(visa) {
-  if (Array.isArray(visa?.requirements) && visa.requirements.length > 0) {
-    return visa.requirements.map((text) => String(text || "").trim()).filter(Boolean);
-  }
-
-  const requirements = normalizeDocumentRequirements(visa);
-  if (requirements.length > 0) {
-    return requirements
-      .map((row) => row?.documents)
-      .filter(Boolean)
-      .flatMap((value) =>
-        String(value)
-          .split(/[,;|]/)
-          .map((s) => s.trim())
-          .filter(Boolean),
-      );
-  }
-
-  const raw = visa?.documents;
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
-  if (typeof raw === "string") {
-    return raw
-      .split(/[,;|]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  return [];
 }
 
 function isDocumentUrl(value) {
@@ -251,7 +343,9 @@ function VisaViewModal({ open, visa, onClose }) {
   const documentRequirements = visa.documentRequirements?.length
     ? visa.documentRequirements
     : normalizeDocumentRequirements(visa);
-  const documentEntries = visa.documentEntries?.length ? visa.documentEntries : getDocumentEntries(visa);
+  const documentEntries = (visa.documentEntries?.length ? visa.documentEntries : getDocumentEntries(visa)).filter(
+    (entry) => isDocumentUrl(entry),
+  );
   const variantOptions = visa.variants?.length ? visa.variants : getVariantOptions(visa);
   const firstVariant = variantOptions[0] || null;
 
@@ -286,11 +380,13 @@ function VisaViewModal({ open, visa, onClose }) {
         <Box
           sx={{
             px: 2.5,
-            py: 2.25,
+            pt: 2,
+            pb: 2.25,
             background: "linear-gradient(135deg, #024DAF 0%, #0F2F56 100%)",
             color: "#fff",
             position: "relative",
-            overflow: "hidden",
+            overflow: "visible",
+            flexShrink: 0,
           }}
         >
           <Box
@@ -302,19 +398,20 @@ function VisaViewModal({ open, visa, onClose }) {
               height: 140,
               borderRadius: "50%",
               bgcolor: "rgba(255,255,255,0.07)",
+              pointerEvents: "none",
             }}
           />
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               justifyContent: "space-between",
               gap: 1.5,
-              mb: 1.5,
               position: "relative",
+              zIndex: 1,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.25, minWidth: 0, flex: 1 }}>
               <Box
                 sx={{
                   width: 40,
@@ -325,13 +422,38 @@ function VisaViewModal({ open, visa, onClose }) {
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  mt: 0.15,
                 }}
               >
                 <FlightTakeoffIcon sx={{ fontSize: 22, color: "#fff" }} />
               </Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2, letterSpacing: -0.2 }}>
-                Visa details
-              </Typography>
+              <Box sx={{ minWidth: 0, flex: 1, pt: 0.15 }}>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    lineHeight: 1.35,
+                    letterSpacing: 0.2,
+                    color: "rgba(255,255,255,0.82)",
+                    mb: 0.55,
+                  }}
+                >
+                  Visa details
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    lineHeight: 1.35,
+                    letterSpacing: -0.2,
+                    color: "#FFFFFF",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {visa.route || "-"}
+                </Typography>
+              </Box>
             </Box>
             <IconButton
               onClick={onClose}
@@ -347,22 +469,16 @@ function VisaViewModal({ open, visa, onClose }) {
             </IconButton>
           </Box>
 
-          <Typography
-            sx={{
-              fontSize: 22,
-              fontWeight: 800,
-              lineHeight: 1.3,
-              letterSpacing: -0.3,
-              position: "relative",
-            }}
-          >
-            {visa.route || "-"}
-          </Typography>
-
           {(firstVariant?.entryType && firstVariant.entryType !== "-") ||
           (visa.visaCategory && visa.visaCategory !== "-") ||
           (visa.visaType && visa.visaType !== "-") ? (
-            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.25, position: "relative" }}>
+            <Stack
+              direction="row"
+              spacing={0.75}
+              flexWrap="wrap"
+              useFlexGap
+              sx={{ mt: 1.5, position: "relative", zIndex: 1 }}
+            >
               {(firstVariant?.entryType || visa.visaCategory) && (firstVariant?.entryType || visa.visaCategory) !== "-" ? (
                 <Chip
                   label={firstVariant?.entryType || visa.visaCategory}
@@ -508,7 +624,7 @@ function VisaViewModal({ open, visa, onClose }) {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
                       <WorkOutlineIcon sx={{ fontSize: 17, color: "#024DAF" }} />
                       <Chip
-                        label={docs.profession || `Profession ${idx + 1}`}
+                        label={docs.profession || `Occupation ${idx + 1}`}
                         size="small"
                         sx={{
                           height: 26,
@@ -519,13 +635,27 @@ function VisaViewModal({ open, visa, onClose }) {
                         }}
                       />
                     </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                      <DetailField label="Documents" value={docs.documents} />
-                      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1 }}>
-                        <DetailField label="Exceptional case" value={docs.exceptionalCase} />
-                        <DetailField label="Note" value={docs.note} />
+                    {Array.isArray(docs.items) && docs.items.length > 0 ? (
+                      <Box component="ul" sx={{ m: 0, pl: 2.25, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                        {docs.items.map((item, itemIdx) => (
+                          <Typography
+                            component="li"
+                            key={`${item}-${itemIdx}`}
+                            sx={{ fontSize: 13, fontWeight: 600, color: "#0F172A", lineHeight: 1.4 }}
+                          >
+                            {item}
+                          </Typography>
+                        ))}
                       </Box>
-                    </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        <DetailField label="Documents" value={docs.documents} />
+                        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1 }}>
+                          <DetailField label="Exceptional case" value={docs.exceptionalCase} />
+                          <DetailField label="Note" value={docs.note} />
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
                 ))}
               </Box>

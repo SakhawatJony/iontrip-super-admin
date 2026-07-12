@@ -146,6 +146,7 @@ const getAgencyInitials = (name) => {
   const parts = String(name || "")
     .trim()
     .split(/\s+/)
+    .map((part) => part.replace(/[^a-zA-Z0-9]/g, ""))
     .filter(Boolean);
   if (parts.length === 0) return "IT";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();

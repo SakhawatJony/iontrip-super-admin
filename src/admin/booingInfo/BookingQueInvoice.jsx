@@ -76,6 +76,7 @@ const BookingQueInvoice = () => {
 
   useEffect(() => {
     const fromBooking = resolveAgentInfoFromBooking(invoiceData);
+    // Always reset from booking agent first so a previous agent's logo cannot stick.
     setAgentProfile(fromBooking);
 
     const agentEmail = resolveBookingAgentEmail(invoiceData);
@@ -111,7 +112,13 @@ const BookingQueInvoice = () => {
       .then((response) => {
         const { agentInfo } = normalizeAgentListResponse(response);
         if (agentInfo) {
-          setAgentProfile((prev) => mergeAgentProfiles(agentInfo, prev, fromBooking));
+          // Booking agent wins for non-empty fields; keep booking logoUrl when it is null/empty.
+          const merged = mergeAgentProfiles(agentInfo, fromBooking);
+          if (invoiceData?.agent && typeof invoiceData.agent === "object") {
+            const bookingLogo = fromBooking?.logoUrl || "";
+            merged.logoUrl = bookingLogo;
+          }
+          setAgentProfile(merged);
         }
       })
       .catch(() => {});

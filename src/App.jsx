@@ -28,6 +28,7 @@ import ManageWebsite from "./admin/ManageWebsite.jsx";
 import VisaLayout from "./admin/VisaLayout.jsx";
 import AllVisa from "./admin/AllVisa.jsx";
 import AddVisa from "./admin/AddVisa.jsx";
+import VisaSetting from "./admin/VisaSetting.jsx";
 import TourLayout from "./admin/TourLayout.jsx";
 import AllTour from "./admin/AllTour.jsx";
 import AddTour from "./admin/AddTour.jsx";
@@ -118,6 +119,7 @@ export default function App() {
               <Route index element={<Navigate to="allvisa" replace />} />
               <Route path="allvisa" element={<AllVisa />} />
               <Route path="addvisa" element={<AddVisa />} />
+              <Route path="setting" element={<VisaSetting />} />
             </Route>
 
             <Route path="tour" element={<TourLayout />}>

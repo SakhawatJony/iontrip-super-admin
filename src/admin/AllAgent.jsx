@@ -31,6 +31,8 @@ import TrendingDownOutlinedIcon from "@mui/icons-material/TrendingDownOutlined";
 import FlightTakeoffOutlinedIcon from "@mui/icons-material/FlightTakeoffOutlined";
 import AutorenewOutlinedIcon from "@mui/icons-material/AutorenewOutlined";
 import MoneyOffOutlinedIcon from "@mui/icons-material/MoneyOffOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -42,6 +44,41 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 const MAX_MARKUP_PERCENT = 7;
+
+const AGENT_EDITABLE_FIELDS = [
+  { key: "name", label: "Agent Name" },
+  { key: "companyName", label: "Company Name" },
+  { key: "businessType", label: "Business Type" },
+  { key: "mobile", label: "Mobile" },
+  { key: "companyAddress", label: "Company Address", multiline: true },
+];
+
+const AGENT_EDITABLE_KEY_SET = new Set([
+  "name",
+  "companyName",
+  "company_name",
+  "businessType",
+  "business_type",
+  "mobile",
+  "companyAddress",
+  "company_address",
+  "address",
+]);
+
+const emptyAgentEditForm = () => ({
+  name: "",
+  companyName: "",
+  businessType: "",
+  mobile: "",
+  companyAddress: "",
+});
+
+function resolveEditableFormKey(key) {
+  if (key === "company_name") return "companyName";
+  if (key === "business_type") return "businessType";
+  if (key === "company_address" || key === "address") return "companyAddress";
+  return key;
+}
 
 const tableColumns = [
   { key: "agentId", label: "Agent ID", width: "110px" },
@@ -100,6 +137,18 @@ function pickAgentField(agent, ...keys) {
     if (value !== undefined && value !== null && value !== "") return value;
   }
   return null;
+}
+
+function buildAgentEditForm(agent) {
+  return {
+    name: String(pickAgentField(agent, "name", "agentName", "agent_name") || ""),
+    companyName: String(pickAgentField(agent, "companyName", "company_name") || ""),
+    businessType: String(pickAgentField(agent, "businessType", "business_type") || ""),
+    mobile: String(pickAgentField(agent, "mobile", "phone", "phoneNumber", "phone_number") || ""),
+    companyAddress: String(
+      pickAgentField(agent, "companyAddress", "company_address", "address") || "",
+    ),
+  };
 }
 
 function pickDocumentUrl(agent, field) {
@@ -1124,6 +1173,9 @@ const AllAgent = ({ title = "Agent History" }) => {
   const [assignPeople, setAssignPeople] = useState([]);
   const [assignPersonId, setAssignPersonId] = useState(0);
   const [assignPeopleLoading, setAssignPeopleLoading] = useState(false);
+  const [isEditingAgent, setIsEditingAgent] = useState(false);
+  const [agentEditForm, setAgentEditForm] = useState(emptyAgentEditForm);
+  const [agentEditLoading, setAgentEditLoading] = useState(false);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = useState("");
   const [pdfViewerTitle, setPdfViewerTitle] = useState("Document");
@@ -1175,6 +1227,8 @@ const AllAgent = ({ title = "Agent History" }) => {
     setMarkupInput(agent?.markup != null && agent?.markup !== "" ? String(agent.markup) : "");
     const existingAssignId = Number(agent?.assignPersonId ?? agent?.assign_person_id ?? 0);
     setAssignPersonId(Number.isFinite(existingAssignId) ? existingAssignId : 0);
+    setIsEditingAgent(false);
+    setAgentEditForm(buildAgentEditForm(agent));
     setModalOpen(true);
     fetchAssignPeople();
   };
@@ -1184,9 +1238,116 @@ const AllAgent = ({ title = "Agent History" }) => {
     setSelectedAgent(null);
     setMarkupInput("");
     setAssignPersonId(0);
+    setIsEditingAgent(false);
+    setAgentEditForm(emptyAgentEditForm());
+    setAgentEditLoading(false);
     setPdfViewerOpen(false);
     setPdfViewerUrl("");
     setPdfViewerTitle("Document");
+  };
+
+  const handleStartEditAgent = () => {
+    if (!selectedAgent) return;
+    setAgentEditForm(buildAgentEditForm(selectedAgent));
+    setIsEditingAgent(true);
+  };
+
+  const handleCancelEditAgent = () => {
+    setAgentEditForm(buildAgentEditForm(selectedAgent));
+    setIsEditingAgent(false);
+  };
+
+  const handleAgentEditFieldChange = (key, value) => {
+    setAgentEditForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveAgentEdit = async () => {
+    if (!selectedAgent) return;
+
+    const authToken = token || localStorage.getItem("adminToken") || "";
+    if (!authToken) {
+      toast.error("Authentication token missing. Please login again.");
+      return;
+    }
+
+    const email = pickAgentField(selectedAgent, "email");
+    if (!email) {
+      toast.error("Agent email is missing.");
+      return;
+    }
+
+    const payload = {
+      name: String(agentEditForm.name || "").trim(),
+      companyName: String(agentEditForm.companyName || "").trim(),
+      businessType: String(agentEditForm.businessType || "").trim(),
+      mobile: String(agentEditForm.mobile || "").trim(),
+      companyAddress: String(agentEditForm.companyAddress || "").trim(),
+    };
+
+    if (!payload.name) {
+      toast.error("Agent name is required.");
+      return;
+    }
+    if (!payload.companyName) {
+      toast.error("Company name is required.");
+      return;
+    }
+    if (!payload.mobile) {
+      toast.error("Mobile is required.");
+      return;
+    }
+
+    setAgentEditLoading(true);
+    try {
+      const encodedEmail = encodeURIComponent(email);
+      const response = await axios.patch(
+        `${API_BASE_URL}${API_ENDPOINTS.VERIFY_AGENT}?email=${encodedEmail}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        const updatedAgent = {
+          ...selectedAgent,
+          ...payload,
+          company_name: payload.companyName,
+          business_type: payload.businessType,
+          company_address: payload.companyAddress,
+        };
+        setSelectedAgent(updatedAgent);
+        setAgents((prev) =>
+          prev.map((agent) => {
+            const sameEmail =
+              String(pickAgentField(agent, "email") || "").toLowerCase() ===
+              String(email).toLowerCase();
+            const sameId =
+              pickAgentField(agent, "agentId", "agent_id", "id") != null &&
+              String(pickAgentField(agent, "agentId", "agent_id", "id")) ===
+                String(pickAgentField(selectedAgent, "agentId", "agent_id", "id"));
+            return sameEmail || sameId ? { ...agent, ...updatedAgent } : agent;
+          }),
+        );
+        setIsEditingAgent(false);
+        toast.success("Agent information updated successfully!");
+        fetchAgents();
+      }
+    } catch (err) {
+      const apiMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (Array.isArray(err?.response?.data?.errors) ? err.response.data.errors[0] : null) ||
+        err?.message ||
+        "Failed to update agent information.";
+      toast.error(apiMessage);
+      console.error("Update agent failed:", err?.response?.data || err);
+    } finally {
+      setAgentEditLoading(false);
+    }
   };
 
   const handleOpenPdfViewer = (url, title) => {
@@ -1695,6 +1856,26 @@ const AllAgent = ({ title = "Agent History" }) => {
   };
 
   const renderAgentModalField = (key, value) => {
+    if (isEditingAgent && AGENT_EDITABLE_KEY_SET.has(key)) {
+      const formKey = resolveEditableFormKey(key);
+      const fieldMeta = AGENT_EDITABLE_FIELDS.find((item) => item.key === formKey);
+      return (
+        <TextField
+          fullWidth
+          size="small"
+          multiline={Boolean(fieldMeta?.multiline)}
+          minRows={fieldMeta?.multiline ? 2 : undefined}
+          value={agentEditForm[formKey] ?? ""}
+          onChange={(e) => handleAgentEditFieldChange(formKey, e.target.value)}
+          disabled={agentEditLoading}
+          sx={{
+            bgcolor: "#FFFFFF",
+            "& .MuiInputBase-input": { fontSize: 14, fontWeight: 600 },
+          }}
+        />
+      );
+    }
+
     if (key === "markup") {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
@@ -2218,21 +2399,48 @@ const AllAgent = ({ title = "Agent History" }) => {
                   position: "relative",
                 }}
               >
-                <IconButton
-                  onClick={handleCloseDetailsModal}
+                <Box
                   sx={{
                     position: "absolute",
                     top: 12,
                     right: 12,
-                    bgcolor: "rgba(255,255,255,0.14)",
-                    color: "#FFFFFF",
-                    "&:hover": { bgcolor: "rgba(255,255,255,0.24)" },
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.75,
                   }}
                 >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
+                  {!isEditingAgent ? (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleStartEditAgent}
+                      startIcon={<EditOutlinedIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: 12,
+                        bgcolor: "rgba(255,255,255,0.18)",
+                        color: "#FFFFFF",
+                        boxShadow: "none",
+                        "&:hover": { bgcolor: "rgba(255,255,255,0.28)", boxShadow: "none" },
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  ) : null}
+                  <IconButton
+                    onClick={handleCloseDetailsModal}
+                    sx={{
+                      bgcolor: "rgba(255,255,255,0.14)",
+                      color: "#FFFFFF",
+                      "&:hover": { bgcolor: "rgba(255,255,255,0.24)" },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, pr: 5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, pr: isEditingAgent ? 6 : 14 }}>
                   {pickDocumentUrl(selectedAgent, AGENT_DOCUMENT_FIELDS[0]) ? (
                     <Box
                       component="img"
@@ -2472,7 +2680,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                     gap: 1.5,
                   }}
                 >
-                  {selectedAgent?.isVerified === true ? (
+                  {!isEditingAgent && selectedAgent?.isVerified === true ? (
                     <Box
                       sx={{
                         p: 1.5,
@@ -2632,6 +2840,47 @@ const AllAgent = ({ title = "Agent History" }) => {
                       flexWrap: "wrap",
                     }}
                   >
+                    {isEditingAgent ? (
+                      <>
+                        <Button
+                          variant="outlined"
+                          onClick={handleCancelEditAgent}
+                          disabled={agentEditLoading}
+                          sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            borderColor: "#CBD5E1",
+                            color: "#475569",
+                            bgcolor: "#FFFFFF",
+                            "&:hover": { borderColor: "#94A3B8", bgcolor: "#F8FAFC" },
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="contained"
+                          onClick={handleSaveAgentEdit}
+                          disabled={agentEditLoading}
+                          startIcon={
+                            agentEditLoading ? (
+                              <CircularProgress size={14} sx={{ color: "#FFFFFF" }} />
+                            ) : (
+                              <SaveOutlinedIcon sx={{ fontSize: 16 }} />
+                            )
+                          }
+                          sx={{
+                            textTransform: "none",
+                            fontWeight: 600,
+                            bgcolor: "var(--primary-dark, #024DAF)",
+                            boxShadow: "none",
+                            "&:hover": { bgcolor: "#0B2442", boxShadow: "none" },
+                            "&:disabled": { bgcolor: "#E2E8F0", color: "#94A3B8" },
+                          }}
+                        >
+                          {agentEditLoading ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </>
+                    ) : null}
                     <Button
                       variant="outlined"
                       onClick={handleCloseDetailsModal}
@@ -2646,7 +2895,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                     >
                       Close
                     </Button>
-                    {selectedAgent?.isVerified === true ? (
+                    {!isEditingAgent && selectedAgent?.isVerified === true ? (
                       <>
                         <Button
                           variant="contained"
@@ -2679,7 +2928,8 @@ const AllAgent = ({ title = "Agent History" }) => {
                           {statusUpdateLoading ? "Updating..." : "Deactivate"}
                         </Button>
                       </>
-                    ) : (
+                    ) : null}
+                    {!isEditingAgent && selectedAgent?.isVerified !== true ? (
                       <>
                         <Button
                           variant="contained"
@@ -2712,7 +2962,7 @@ const AllAgent = ({ title = "Agent History" }) => {
                           {statusUpdateLoading ? "Processing..." : "Reject"}
                         </Button>
                       </>
-                    )}
+                    ) : null}
                   </Box>
                 </Box>
               </Box>

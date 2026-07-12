@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
   VENDOR_TICKET: "/ticket-actions/VendorTicket",
   CREATE_VISA: "/visa/createVisa",
   FIND_ALL_VISA: "/visa/findAllVisa",
+  COUNTRIES: "/country",
+  COUNTRY_BY_ID: (id) => `/country/${id}`,
   AIRLINE_MARKUP: "/airline-markup",
   AIRLINE_MARKUP_BY_ID: (id) => `/airline-markup/${id}`,
   UPDATE_VISA: (id) => `/visa/updateVisa/${id}`,

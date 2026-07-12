@@ -562,6 +562,7 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
             <Box sx={submenuRailSx}>
               <SubMenuItem collapsed={collapsed} text="Visa History" path="/dashboard/visa/allvisa" />
               <SubMenuItem collapsed={collapsed} text="Add Visa" path="/dashboard/visa/addvisa" />
+              <SubMenuItem collapsed={collapsed} text="Visa Setting" path="/dashboard/visa/setting" />
             </Box>
           </Collapse>
 
