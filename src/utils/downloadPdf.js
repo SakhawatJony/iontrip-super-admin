@@ -87,7 +87,8 @@ async function inlineExternalImages(element) {
 
     try {
       const response = await fetch(src, { cache: "force-cache" });
-      if (response.ok) {
+      const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+      if (response.ok && contentType.startsWith("image/")) {
         const dataUrl = await blobToDataUrl(await response.blob());
         if (await trySetDataUrl(dataUrl)) return;
       }
@@ -175,6 +176,14 @@ function prepareElementForCapture(element) {
   };
 }
 
+/** JPEG keeps ticket/invoice PDFs small; PNG often balloons to multiple MB. */
+const PDF_IMAGE_TYPE = "JPEG";
+const PDF_JPEG_QUALITY = 0.78;
+const PDF_CAPTURE_SCALE = 1.5;
+
+const canvasToPdfImage = (sourceCanvas) =>
+  sourceCanvas.toDataURL("image/jpeg", PDF_JPEG_QUALITY);
+
 /**
  * Captures an HTML element and downloads it as a PDF file.
  * @param {HTMLElement} element - The DOM element to capture (e.g. a ref's current)
@@ -197,7 +206,7 @@ export async function downloadElementAsPdf(element, filename = "e-ticket", optio
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const canvas = await html2canvas(element, {
-      scale: 2,
+      scale: PDF_CAPTURE_SCALE,
       useCORS: true,
       allowTaint: true,
       logging: false,
@@ -218,11 +227,11 @@ export async function downloadElementAsPdf(element, filename = "e-ticket", optio
       throw new Error("PDF capture produced an empty canvas");
     }
 
-    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
+      compress: true,
     });
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -251,18 +260,38 @@ export async function downloadElementAsPdf(element, filename = "e-ticket", optio
         pageCanvas.width = imgWidth;
         pageCanvas.height = sliceHeight;
         const ctx = pageCanvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, imgWidth, sliceHeight);
         ctx.drawImage(canvas, 0, positionY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
-        const sliceData = pageCanvas.toDataURL("image/png");
+        const sliceData = canvasToPdfImage(pageCanvas);
         const sliceScaledHeight = (sliceHeight * scaledWidth) / imgWidth;
 
         if (positionY > 0) pdf.addPage();
-        pdf.addImage(sliceData, "PNG", (pdfWidth - scaledWidth) / 2, margin, scaledWidth, sliceScaledHeight);
+        pdf.addImage(
+          sliceData,
+          PDF_IMAGE_TYPE,
+          (pdfWidth - scaledWidth) / 2,
+          margin,
+          scaledWidth,
+          sliceScaledHeight,
+          undefined,
+          "FAST"
+        );
 
         positionY += sliceHeight;
         remainingHeight -= sliceHeight;
       }
     } else {
-      pdf.addImage(imgData, "PNG", (pdfWidth - scaledWidth) / 2, margin, scaledWidth, scaledHeight);
+      pdf.addImage(
+        canvasToPdfImage(canvas),
+        PDF_IMAGE_TYPE,
+        (pdfWidth - scaledWidth) / 2,
+        margin,
+        scaledWidth,
+        scaledHeight,
+        undefined,
+        "FAST"
+      );
     }
 
     pdf.save(`${filename}.pdf`);

@@ -16,12 +16,10 @@ export default function AirlineLogoImage({
 }) {
   const code = String(carrierCode || "").trim().toUpperCase();
   const candidates = useMemo(() => getAirlineLogoCandidateUrls(code), [code]);
-  const [attempt, setAttempt] = useState(0);
   const [enhancedSrc, setEnhancedSrc] = useState("");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setAttempt(0);
     setEnhancedSrc("");
     setFailed(false);
   }, [code, preloadedSrc]);
@@ -49,34 +47,34 @@ export default function AirlineLogoImage({
     };
   }, [code, preloadedSrc, candidates]);
 
-  const src = preloadedSrc || enhancedSrc || candidates[attempt] || "";
+  const src = failed ? "" : preloadedSrc || enhancedSrc || "";
 
+  const renderCodeFallback = () =>
+    showCodeFallback && code ? (
+      <Box
+        component="span"
+        sx={{ fontSize: size * 0.28, fontWeight: 800, lineHeight: 1, ...codeFallbackSx }}
+      >
+        {code}
+      </Box>
+    ) : (
+      <FlightTakeoffIcon sx={{ fontSize: fallbackIconSize, ...iconSx }} />
+    );
+
+  // Wait for a verified image — never paint unverified `/airline-logos` paths that
+  // can be SPA HTML (200 text/html) on Netlify before logo proxies are configured.
   if (!src) {
-    if (showCodeFallback && code) {
-      return (
-        <Box
-          component="span"
-          sx={{ fontSize: size * 0.28, fontWeight: 800, lineHeight: 1, ...codeFallbackSx }}
-        >
-          {code}
-        </Box>
-      );
-    }
-    return <FlightTakeoffIcon sx={{ fontSize: fallbackIconSize, ...iconSx }} />;
-  }
-
-  if (failed && !preloadedSrc && !enhancedSrc && attempt >= candidates.length - 1) {
-    if (showCodeFallback && code) {
-      return (
-        <Box
-          component="span"
-          sx={{ fontSize: size * 0.28, fontWeight: 800, lineHeight: 1, ...codeFallbackSx }}
-        >
-          {code}
-        </Box>
-      );
-    }
-    return <FlightTakeoffIcon sx={{ fontSize: fallbackIconSize, ...iconSx }} />;
+    if (failed || !code) return renderCodeFallback();
+    return (
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          display: "block",
+          ...imgSx,
+        }}
+      />
+    );
   }
 
   return (
@@ -88,13 +86,7 @@ export default function AirlineLogoImage({
       data-carrier-code={code}
       loading="eager"
       decoding="sync"
-      onError={() => {
-        if (!preloadedSrc && !enhancedSrc && attempt < candidates.length - 1) {
-          setAttempt((prev) => prev + 1);
-          return;
-        }
-        setFailed(true);
-      }}
+      onError={() => setFailed(true)}
       sx={{ width: size, height: size, objectFit: "contain", display: "block", ...imgSx }}
     />
   );

@@ -2,6 +2,9 @@ export function getAirlineLogoCandidateUrls(carrierCode) {
   const code = String(carrierCode || "").trim().toUpperCase();
   if (!code) return [];
 
+  // Same-origin proxies first (Vite in dev, Netlify redirects in prod) so PDF can
+  // fetch without CORS. Absolute CDNs are fallbacks; loadAirlineLogoSource rejects
+  // non-image responses (SPA HTML from a missing proxy must never become a data URL).
   return [
     `/airline-logos/${code}.png`,
     `/gstatic-logos/${code}.png`,
@@ -37,15 +40,22 @@ const blobToDataUrl = (blob) =>
     reader.readAsDataURL(blob);
   });
 
+const isImageContentType = (contentType) =>
+  String(contentType || "")
+    .toLowerCase()
+    .startsWith("image/");
+
 /** Load airline logo for PDF/UI; returns data URL or direct URL when displayable. */
 export async function loadAirlineLogoSource(url) {
   if (!url) return null;
 
   try {
     const response = await fetch(url, { cache: "force-cache" });
-    if (response.ok) {
+    if (response.ok && isImageContentType(response.headers.get("content-type"))) {
       const blob = await response.blob();
-      if (blob.size > 0) return await blobToDataUrl(blob);
+      if (blob.size > 0 && isImageContentType(blob.type || response.headers.get("content-type"))) {
+        return await blobToDataUrl(blob);
+      }
     }
   } catch {
     // fall through to image element loading

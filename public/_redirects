@@ -1,1 +1,3 @@
+/airline-logos/*  https://tbbd-flight.s3.ap-southeast-1.amazonaws.com/airlines-logo/:splat  200!
+/gstatic-logos/*  https://www.gstatic.com/flights/airline_logos/70px/:splat  200!
 /*    /index.html   200
