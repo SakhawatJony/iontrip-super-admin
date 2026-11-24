@@ -1,0 +1,161 @@
+
+
+import React from "react";
+import Box from "@mui/material/Box";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { API_ENDPOINTS, TOUR_API_BASE_URL } from "./config/api.js";
+import Navbar from "./shared/Navbar.jsx";
+import Footer from "./shared/Footer.jsx";
+import AdminLogin from "./admin/AdminLogin.jsx";
+import AdminLayout from "./admin/AdminLayout.jsx";
+import Dashboard from "./admin/Dashboard.jsx";
+import AllDeposit from "./admin/AllDeposit.jsx";
+import AllFlightBooking from "./admin/AllFlightBooking.jsx";
+import AllAgent from "./admin/AllAgent.jsx";
+import AllAdmin from "./admin/AllAdmin.jsx";
+import AddAdmin from "./admin/AddAdmin.jsx";
+import AllBank from "./admin/AllBank.jsx";
+import AllAirlineCommission from "./admin/AllAirlineCommission.jsx";
+import AllAssignPeople from "./admin/AllAssignPeople.jsx";
+import LedgerReport from "./admin/LedgerReport.jsx";
+import SearchReport from "./admin/SearchReport.jsx";
+import BookingQueDetails from "./admin/booingInfo/BookingQueDetails.jsx";
+import BookingQueRefund from "./admin/booingInfo/BookingQueRefund.jsx";
+import BookingQueInvoice from "./admin/booingInfo/BookingQueInvoice.jsx";
+import MakeTicketed from "./admin/booingInfo/MakeTicketed.jsx";
+import AllBlog from "./admin/AllBlog.jsx";
+import AddBlog from "./admin/AddBlog.jsx";
+import ManageWebsite from "./admin/ManageWebsite.jsx";
+import VisaLayout from "./admin/VisaLayout.jsx";
+import AllVisa from "./admin/AllVisa.jsx";
+import AddVisa from "./admin/AddVisa.jsx";
+import VisaSetting from "./admin/VisaSetting.jsx";
+import VisaBookingHistory from "./admin/VisaBookingHistory.jsx";
+import VisaBookingDetails from "./admin/VisaBookingDetails.jsx";
+import TourLayout from "./admin/TourLayout.jsx";
+import AllTour from "./admin/AllTour.jsx";
+import AddTour from "./admin/AddTour.jsx";
+import TourBookingHistory from "./admin/TourBookingHistory.jsx";
+import TourEnquiryDetails from "./admin/TourEnquiryDetails.jsx";
+import TourPackageDetails from "./admin/TourPackageDetails.jsx";
+import FlightLayout from "./admin/FlightLayout.jsx";
+import FlightInfo from "./admin/FlightInfo.jsx";
+import ReschedulePax from "./admin/ReschedulePax.jsx";
+import AddFlightBooking from "./admin/AddFlightBooking.jsx";
+import WalletOverview from "./admin/WalletOverview.jsx";
+import AccountProfile from "./admin/AccountProfile.jsx";
+import HotelLayout from "./admin/HotelLayout.jsx";
+import HotelBookingHistory from "./admin/HotelBookingHistory.jsx";
+import HotelConfirmHistory from "./admin/HotelConfirmHistory.jsx";
+import HotelRefundHistory from "./admin/HotelRefundHistory.jsx";
+import HotelCancelledHistory from "./admin/HotelCancelledHistory.jsx";
+
+export default function App() {
+  const location = useLocation();
+  const hideChrome = location.pathname.startsWith("/dashboard");
+
+  return (
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      
+      <Box sx={{ flexGrow: 1 }}>
+        <Routes>
+          <Route path="/" element={<AdminLogin />} />
+          <Route path="/dashboard" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="alldeposit" element={<AllDeposit />} />
+            <Route path="flightbookings" element={<FlightLayout />}>
+              <Route index element={<Navigate to="bookinghistory" replace />} />
+              <Route
+                path="bookinghistory"
+                element={<AllFlightBooking key="bookinghistory" title="All Booking" buttonLabel="All Booking" defaultStatus="" />}
+              />
+              <Route path="addflightbooking" element={<AddFlightBooking />} />
+              <Route
+                path="ticketedhistory"
+                element={<AllFlightBooking key="ticketedhistory" title="Ticketed History" buttonLabel="Ticketed" defaultStatus="ticketed" />}
+              />
+              <Route
+                path="issueinprocesshistory"
+                element={<AllFlightBooking key="issueinprocesshistory" title="Issue in Process History" buttonLabel="Issue in Process" defaultStatus="issueinprocess" />}
+              />
+              <Route
+                path="cancelledhistory"
+                element={<AllFlightBooking key="cancelledhistory" title="Cancelled History" buttonLabel="Cancelled" defaultStatus="cancelled" />}
+              />
+              <Route
+                path="reissuehistory"
+                element={<AllFlightBooking key="reissuehistory" title="Reissue History" buttonLabel="Reissue" defaultStatus="reissue" />}
+              />
+              <Route
+                path="refundshistory"
+                element={<AllFlightBooking key="refundshistory" title="Refunds History" buttonLabel="Refunds" defaultStatus="refund" />}
+              />
+              <Route path="flightinfo" element={<FlightInfo />} />
+              <Route path="reschedulepax" element={<ReschedulePax />} />
+            </Route>
+            <Route path="hotel" element={<HotelLayout />}>
+              <Route index element={<Navigate to="bookinghistory" replace />} />
+              <Route path="bookinghistory" element={<HotelBookingHistory />} />
+              <Route path="confirmhistory" element={<HotelConfirmHistory />} />
+              <Route path="refundshistory" element={<HotelRefundHistory />} />
+              <Route path="cancelledhistory" element={<HotelCancelledHistory />} />
+            </Route>
+            <Route path="customer/allagent" element={<AllAgent />} />
+            <Route path="settings/alladmin" element={<AllAdmin />} />
+            <Route path="settings/addadmin" element={<AddAdmin />} />
+            <Route path="settings/allbank" element={<AllBank />} />
+            <Route path="settings/airlinecommission" element={<AllAirlineCommission />} />
+            <Route path="settings/assignpeople" element={<AllAssignPeople />} />
+            <Route path="ledgerreport" element={<LedgerReport />} />
+            <Route path="searchreport" element={<SearchReport />} />
+            <Route path="wallet" element={<WalletOverview />} />
+            <Route path="account" element={<AccountProfile title="Profile" />} />
+            <Route path="account/alltraveler" element={<AccountProfile title="All Traveler" />} />
+            <Route path="manage" element={<Navigate to="/dashboard/manage/allblog" replace />} />
+            <Route path="manage/allblog" element={<AllBlog />} />
+            <Route path="manage/website" element={<ManageWebsite />} />
+            <Route path="addblog" element={<AddBlog />} />
+            <Route path="editblog/:id" element={<AddBlog />} />
+            <Route path="bookingqueuedetails" element={<BookingQueDetails />} />
+            <Route path="bookingqueuedetails/refund" element={<BookingQueRefund />} />
+            <Route path="bookingqueueinvoice" element={<BookingQueInvoice />} />
+            <Route path="maketicketed" element={<MakeTicketed />} />
+
+            <Route path="visa" element={<VisaLayout />}>
+              <Route index element={<Navigate to="bookinghistory" replace />} />
+              <Route path="bookinghistory" element={<VisaBookingHistory />} />
+              <Route path="bookingdetails" element={<VisaBookingDetails />} />
+              <Route path="bookingdetails/:bookingId" element={<VisaBookingDetails />} />
+              <Route path="allvisa" element={<AllVisa />} />
+              <Route path="addvisa" element={<AddVisa />} />
+              <Route path="setting" element={<VisaSetting />} />
+            </Route>
+
+            <Route path="tour" element={<TourLayout />}>
+              <Route index element={<Navigate to="bookinghistory" replace />} />
+              <Route path="bookinghistory" element={<TourBookingHistory />} />
+              <Route path="enquirydetails/:enquiryId" element={<TourEnquiryDetails />} />
+              <Route path="alltour" element={<AllTour />} />
+              <Route path="addtour" element={<AddTour />} />
+              <Route path="edittour/:packageId" element={<AddTour />} />
+              <Route path="packagedetails/:packageId" element={<TourPackageDetails />} />
+              <Route
+                path="setting"
+                element={
+                  <VisaSetting
+                    key="tour-setting"
+                    title="Tour Setting"
+                    apiBaseUrl={TOUR_API_BASE_URL}
+                    listEndpoint={API_ENDPOINTS.TOUR_COUNTRIES}
+                    itemEndpoint={API_ENDPOINTS.TOUR_COUNTRY_BY_ID}
+                  />
+                }
+              />
+            </Route>
+          </Route>
+        </Routes>
+      </Box>
+   
+    </Box>
+  );
+}
