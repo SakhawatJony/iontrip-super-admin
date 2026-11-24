@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -196,10 +197,33 @@ export default function AllTour() {
       { key: "status", label: "Status", width: "140px" },
       { key: "createdAt", label: "Added", width: "110px" },
       { key: "actions", label: "Action", width: "100px" },
+=======
+import React, { useEffect, useMemo, useState } from "react";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RemoveIcon from "@mui/icons-material/Remove";
+import { useNavigate } from "react-router-dom";
+import { fluidGridTemplateFromColumns } from "./tableGridUtils.js";
+import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
+
+export default function AllTour() {
+  const navigate = useNavigate();
+  const STORAGE_KEY = "tour_items";
+
+  const tableColumns = useMemo(
+    () => [
+      { key: "tourType", label: "Tour Type", width: "170px" },
+      { key: "duration", label: "Duration", width: "170px" },
+      { key: "maxStay", label: "Maximum Stay", width: "190px" },
+      { key: "cost", label: "Cost", width: "140px" },
+      { key: "createdAt", label: "Added Date", width: "180px" },
+      { key: "actions", label: "Action", width: "120px" },
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     ],
     [],
   );
 
+<<<<<<< HEAD
   const tableGridTemplate = useMemo(() => fluidGridTemplateFromColumns(tableColumns), [tableColumns]);
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit) || 1);
 
@@ -472,11 +496,59 @@ export default function AllTour() {
     }
 
     return <Typography sx={{ fontSize: 12, color: C.text }}>—</Typography>;
+=======
+  const tableGridTemplate = useMemo(
+    () => fluidGridTemplateFromColumns(tableColumns),
+    [tableColumns],
+  );
+
+  const [loading, setLoading] = useState(true);
+  const [tours, setTours] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(tours.length / limit) || 1), [tours.length, limit]);
+
+  const pagedTours = useMemo(() => {
+    const start = (page - 1) * limit;
+    return tours.slice(start, start + limit);
+  }, [tours, page, limit]);
+
+  const formatDate = (iso) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  useEffect(() => {
+    try {
+      const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      setTours(Array.isArray(items) ? items : []);
+    } catch {
+      setTours([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteTour = (id) => {
+    const next = tours.filter((v) => v.id !== id);
+    setTours(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   };
 
   return (
     <Box>
       <AdminPageTitleBar
+<<<<<<< HEAD
         title="All Tour Packages"
         action={
           <Stack direction="row" spacing={1}>
@@ -501,11 +573,30 @@ export default function AllTour() {
               Add Tour
             </Button>
           </Stack>
+=======
+        title="Tour History"
+        action={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/dashboard/tour/addtour")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              bgcolor: "#FFFFFF",
+              color: "var(--primary-dark, #0F2F56)",
+              "&:hover": { bgcolor: "#EAEFF5" },
+            }}
+            startIcon={<AddCircleOutlineIcon />}
+          >
+            Add Tour
+          </Button>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         }
       />
 
       <Box
         sx={{
+<<<<<<< HEAD
           bgcolor: C.cardBg,
           border: `1px solid ${C.border}`,
           borderRadius: 2,
@@ -604,11 +695,22 @@ export default function AllTour() {
         </Box>
 
         <Box sx={{ width: "100%", minWidth: 0, overflowX: "auto" }}>
+=======
+          border: "1px solid #E5E7EB",
+          borderRadius: 1.5,
+          backgroundColor: "#FFFFFF",
+          overflowX: "hidden",
+          width: "100%",
+        }}
+      >
+        <Box sx={{ width: "100%", minWidth: 0 }}>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: tableGridTemplate,
               alignItems: "stretch",
+<<<<<<< HEAD
               minWidth: 1100,
               bgcolor: C.secondary,
             }}
@@ -622,6 +724,35 @@ export default function AllTour() {
                     color: "#fff",
                     letterSpacing: 0.4,
                     textTransform: "uppercase",
+=======
+              width: "100%",
+              backgroundColor: "var(--primary-dark, #024DAF)",
+            }}
+          >
+            {tableColumns.map((column) => (
+              <Box
+                key={column.key}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  px: 2,
+                  py: 1,
+                  borderBottom: "1px solid #E5E7EB",
+                  backgroundColor: "var(--primary-dark, #024DAF)",
+                  minWidth: 0,
+                  overflow: "hidden",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#FFFFFF",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    width: "100%",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
                   }}
                 >
                   {column.label}
@@ -631,6 +762,7 @@ export default function AllTour() {
           </Box>
 
           {loading ? (
+<<<<<<< HEAD
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress size={28} sx={{ color: C.secondary }} />
             </Box>
@@ -642,10 +774,24 @@ export default function AllTour() {
             tours.map((tour, index) => (
               <Box
                 key={`${getItemId(tour) || "tour"}-${index}`}
+=======
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+              <CircularProgress size={24} sx={{ color: "var(--primary-dark, #0F2F56)" }} />
+            </Box>
+          ) : tours.length === 0 ? (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+              <Typography sx={{ fontSize: 12, color: "#6B7280" }}>No tour found</Typography>
+            </Box>
+          ) : (
+            pagedTours.map((tour, index) => (
+              <Box
+                key={`${tour.id}-${index}`}
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
                 sx={{
                   display: "grid",
                   gridTemplateColumns: tableGridTemplate,
                   alignItems: "stretch",
+<<<<<<< HEAD
                   minWidth: 1100,
                   "&:hover": { bgcolor: "#F8FAFC" },
                 }}
@@ -666,29 +812,83 @@ export default function AllTour() {
                     {renderCell(tour, column, index)}
                   </Box>
                 ))}
+=======
+                  width: "100%",
+                }}
+              >
+                {tableColumns.map((column) => {
+                  const value = tour?.[column.key];
+                  return (
+                    <Box
+                      key={`${tour.id}-${column.key}`}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        px: 2,
+                        py: 1.4,
+                        borderBottom: "1px solid #E5E7EB",
+                        minWidth: 0,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {column.key === "createdAt" ? (
+                        <Typography sx={{ fontSize: 12, color: "#111827" }}>{formatDate(tour.createdAt)}</Typography>
+                      ) : column.key === "actions" ? (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => deleteTour(tour.id)}
+                          sx={{ textTransform: "none", fontWeight: 700 }}
+                          startIcon={<RemoveIcon />}
+                        >
+                          Remove
+                        </Button>
+                      ) : (
+                        <Typography sx={{ fontSize: 12, color: "#111827" }}>{value || "-"}</Typography>
+                      )}
+                    </Box>
+                  );
+                })}
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               </Box>
             ))
           )}
         </Box>
       </Box>
 
+<<<<<<< HEAD
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
         <Typography sx={{ fontSize: 12, color: C.muted }}>
           Total: {total} · Page {page} of {totalPages}
         </Typography>
+=======
+      <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 0.5 }}>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
           <Box
             onClick={() => page > 1 && setPage(page - 1)}
             sx={{
+<<<<<<< HEAD
               width: 28,
               height: 28,
+=======
+              width: 24,
+              height: 24,
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+<<<<<<< HEAD
               fontSize: 14,
               fontWeight: 700,
               color: page > 1 ? C.primary : "#9CA3AF",
+=======
+              fontSize: 11,
+              fontWeight: 600,
+              color: page > 1 ? "#1F2A44" : "#9CA3AF",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               backgroundColor: page > 1 ? "#D1D5DB" : "#E5E7EB",
               cursor: page > 1 ? "pointer" : "not-allowed",
             }}
@@ -697,27 +897,43 @@ export default function AllTour() {
           </Box>
 
           {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+<<<<<<< HEAD
             let pageNum = i + 1;
             if (totalPages > 5) {
               const start = Math.max(1, Math.min(page - 2, totalPages - 4));
               pageNum = start + i;
             }
+=======
+            const pageNum = totalPages <= 5 ? i + 1 : i + 1;
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             const isActive = page === pageNum;
             return (
               <Box
                 key={pageNum}
                 onClick={() => setPage(pageNum)}
                 sx={{
+<<<<<<< HEAD
                   width: 28,
                   height: 28,
+=======
+                  width: 24,
+                  height: 24,
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+<<<<<<< HEAD
                   fontSize: 12,
                   fontWeight: 700,
                   color: isActive ? "#FFFFFF" : C.primary,
                   backgroundColor: isActive ? C.primary : "#EAF2FF",
+=======
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: isActive ? "#FFFFFF" : "#1F2A44",
+                  backgroundColor: isActive ? "var(--primary-dark, #0F2F56)" : "#EAF2FF",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
                   cursor: "pointer",
                 }}
               >
@@ -729,15 +945,26 @@ export default function AllTour() {
           <Box
             onClick={() => page < totalPages && setPage(page + 1)}
             sx={{
+<<<<<<< HEAD
               width: 28,
               height: 28,
+=======
+              width: 24,
+              height: 24,
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+<<<<<<< HEAD
               fontSize: 14,
               fontWeight: 700,
               color: page < totalPages ? C.primary : "#9CA3AF",
+=======
+              fontSize: 11,
+              fontWeight: 600,
+              color: page < totalPages ? "#1F2A44" : "#9CA3AF",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               backgroundColor: page < totalPages ? "#D1D5DB" : "#E5E7EB",
               cursor: page < totalPages ? "pointer" : "not-allowed",
             }}
@@ -749,3 +976,7 @@ export default function AllTour() {
     </Box>
   );
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5

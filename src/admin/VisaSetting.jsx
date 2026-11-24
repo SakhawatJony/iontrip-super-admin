@@ -178,12 +178,16 @@ function showApiErrorToasts(err, fallback = "Failed to load countries.") {
   toast.error(typeof message === "string" ? message : fallback);
 }
 
+<<<<<<< HEAD
 export default function VisaSetting({
   title = "Visa Setting",
   listEndpoint = API_ENDPOINTS.COUNTRIES,
   itemEndpoint = API_ENDPOINTS.COUNTRY_BY_ID,
   apiBaseUrl = API_BASE_URL,
 }) {
+=======
+export default function VisaSetting() {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   const { token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [countries, setCountries] = useState([]);
@@ -229,7 +233,11 @@ export default function VisaSetting({
       const q = searchBar.trim();
       if (q) params.append("search", q);
 
+<<<<<<< HEAD
       const response = await axios.get(`${apiBaseUrl}${listEndpoint}?${params.toString()}`, {
+=======
+      const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.COUNTRIES}?${params.toString()}`, {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         headers: authHeaders(),
       });
 
@@ -258,7 +266,11 @@ export default function VisaSetting({
     } finally {
       setLoading(false);
     }
+<<<<<<< HEAD
   }, [page, limit, searchBar, token, authHeaders, listEndpoint, apiBaseUrl]);
+=======
+  }, [page, limit, searchBar, token, authHeaders]);
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 
   useEffect(() => {
     const delay = searchBar.trim() ? 350 : 0;
@@ -364,12 +376,20 @@ export default function VisaSetting({
           setFormLoading(false);
           return;
         }
+<<<<<<< HEAD
         await axios.patch(`${apiBaseUrl}${itemEndpoint(rowId)}`, payload, {
+=======
+        await axios.patch(`${API_BASE_URL}${API_ENDPOINTS.COUNTRY_BY_ID(rowId)}`, payload, {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           headers: authHeaders(),
         });
         toast.success("Country updated successfully.");
       } else {
+<<<<<<< HEAD
         await axios.post(`${apiBaseUrl}${listEndpoint}`, payload, {
+=======
+        await axios.post(`${API_BASE_URL}${API_ENDPOINTS.COUNTRIES}`, payload, {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           headers: authHeaders(),
         });
         toast.success("Country added successfully.");
@@ -412,7 +432,11 @@ export default function VisaSetting({
 
     try {
       setDeletingId(rowId);
+<<<<<<< HEAD
       await axios.delete(`${apiBaseUrl}${itemEndpoint(rowId)}`, {
+=======
+      await axios.delete(`${API_BASE_URL}${API_ENDPOINTS.COUNTRY_BY_ID(rowId)}`, {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         headers: authHeaders(),
       });
       toast.success("Country deleted successfully.");
@@ -538,7 +562,11 @@ export default function VisaSetting({
   return (
     <Box>
       <AdminPageTitleBar
+<<<<<<< HEAD
         title={title}
+=======
+        title="Visa Setting"
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         subtitle={total > 0 ? `${total} countr${total === 1 ? "y" : "ies"}` : undefined}
         action={
           <>

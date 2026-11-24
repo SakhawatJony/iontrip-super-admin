@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from "react";
+=======
+import React, { useEffect, useState } from "react";
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 import {
   Autocomplete,
   Box,
@@ -15,7 +19,10 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+<<<<<<< HEAD
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
@@ -31,10 +38,19 @@ import FlightOutlinedIcon from "@mui/icons-material/FlightOutlined";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+<<<<<<< HEAD
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
+=======
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
+import FlashOnOutlinedIcon from "@mui/icons-material/FlashOnOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -42,6 +58,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api.js";
 import AdminPageTitleBar from "./AdminPageTitleBar.jsx";
 
+<<<<<<< HEAD
 function resolveVisaImageUrl(raw) {
   const src = String(raw || "").trim();
   if (!src) return "";
@@ -50,6 +67,8 @@ function resolveVisaImageUrl(raw) {
   return `${API_BASE_URL}/${src.replace(/^\/+/, "")}`;
 }
 
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 const VISA_TYPE_OPTIONS = [
   { value: "Tourist Visa", label: "Tourist Visa", icon: LuggageOutlinedIcon },
   { value: "Business Visa", label: "Business Visa", icon: BusinessCenterOutlinedIcon },
@@ -137,6 +156,16 @@ const selectMenuProps = {
 
 const DURATION_DAY_OPTIONS = ["15", "30", "45", "60", "90", "180", "365"];
 
+<<<<<<< HEAD
+=======
+const PROCESSING_SPEED_OPTIONS = [
+  { value: "Standard", label: "Standard", subtitle: "7-10 business days", icon: ScheduleOutlinedIcon },
+  { value: "Express", label: "Express", subtitle: "3-5 business days", icon: BoltOutlinedIcon },
+  { value: "Rush", label: "Rush", subtitle: "1-2 business days", icon: RocketLaunchOutlinedIcon },
+  { value: "Super Rush", label: "Super Rush", subtitle: "Same day processing", icon: FlashOnOutlinedIcon },
+];
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 function normalizeDurationDays(value) {
   const text = String(value || "").trim();
   if (!text) return "";
@@ -150,8 +179,26 @@ function getDurationLabel(days) {
   return `${normalized} Days`;
 }
 
+<<<<<<< HEAD
 function normalizeProcessingSpeed(value) {
   return String(value || "").trim();
+=======
+function getProcessingSpeedOption(value) {
+  return PROCESSING_SPEED_OPTIONS.find((option) => option.value === value) || null;
+}
+
+function normalizeProcessingSpeed(value) {
+  const text = String(value || "").trim();
+  if (!text) return "Standard";
+  const direct = getProcessingSpeedOption(text);
+  if (direct) return direct.value;
+  const lower = text.toLowerCase();
+  if (lower === "urgent") return "Rush";
+  const loose = PROCESSING_SPEED_OPTIONS.find(
+    (option) => option.label.toLowerCase() === lower || option.value.toLowerCase() === lower,
+  );
+  return loose?.value || text;
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 }
 
 const CURRENCIES = ["BDT", "NPR", "USD", "INR", "AED", "EUR", "GBP"];
@@ -160,6 +207,7 @@ const TABS = [
   { id: "general", label: "General Info", icon: InfoOutlinedIcon },
   { id: "pricing", label: "Pricing", icon: PaymentsOutlinedIcon },
   { id: "requirements", label: "Requirements", icon: DescriptionOutlinedIcon },
+<<<<<<< HEAD
   { id: "faqs", label: "FAQs", icon: HelpOutlineOutlinedIcon },
 ];
 
@@ -176,15 +224,26 @@ function normalizeFaqs(raw) {
   return faqs.length > 0 ? faqs : [emptyFaq()];
 }
 
+=======
+];
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 const emptyPricingVariant = () => ({
   visaType: "",
   entryType: "",
   durationDays: "",
+<<<<<<< HEAD
   processingSpeed: "",
   visaFee: "",
   commission: "",
   currency: "BDT",
   visaVariantId: null,
+=======
+  processingSpeed: "Standard",
+  visaFee: "",
+  commission: "",
+  currency: "BDT",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 });
 
 function calcVariantTotal(row) {
@@ -377,13 +436,20 @@ const checkboxSx = {
 
 const countryPaperSx = {
   mt: 0.75,
+<<<<<<< HEAD
   borderRadius: "12px",
   border: `1px solid ${C.border}`,
   boxShadow: "0 16px 40px rgba(15, 47, 86, 0.16)",
+=======
+  borderRadius: 2,
+  border: `1px solid ${C.border}`,
+  boxShadow: "0 12px 32px rgba(15, 47, 86, 0.12)",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   overflow: "hidden",
 };
 
 const countryListboxSx = {
+<<<<<<< HEAD
   p: 0.75,
   maxHeight: 300,
   "& .MuiAutocomplete-option": {
@@ -444,11 +510,34 @@ function CountryFlag({ code, size = 22 }) {
   );
 }
 
+=======
+  py: 0.75,
+  maxHeight: 280,
+  "& .MuiAutocomplete-option": {
+    minHeight: 44,
+    px: 1.25,
+    py: 0.85,
+    mx: 0.75,
+    my: 0.25,
+    borderRadius: 1.25,
+    gap: 1,
+    transition: "background-color 0.15s ease, color 0.15s ease",
+    '&[aria-selected="true"]': {
+      bgcolor: "rgba(2, 77, 175, 0.08)",
+    },
+    "&.Mui-focused, &:hover": {
+      bgcolor: "rgba(2, 77, 175, 0.1)",
+    },
+  },
+};
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 function CountrySelectOption({ option, selected }) {
   const code = String(option?.code || "").toUpperCase();
   const name = String(option?.name || "");
 
   return (
+<<<<<<< HEAD
     <>
       <CountryFlag code={code} />
       <Typography
@@ -488,6 +577,63 @@ function CountrySelectOption({ option, selected }) {
         <CheckRoundedIcon sx={{ fontSize: 18, color: C.secondary, flexShrink: 0 }} />
       ) : null}
     </>
+=======
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: 1.25,
+          bgcolor: selected ? "rgba(2, 77, 175, 0.14)" : "#EFF6FF",
+          color: C.secondary,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          border: `1px solid ${selected ? "rgba(2, 77, 175, 0.28)" : "#DBEAFE"}`,
+        }}
+      >
+        {code ? (
+          <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.4, lineHeight: 1 }}>
+            {code}
+          </Typography>
+        ) : (
+          <PublicOutlinedIcon sx={{ fontSize: 18 }} />
+        )}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontSize: 13.5,
+            fontWeight: selected ? 700 : 600,
+            color: C.primary,
+            lineHeight: 1.25,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {name}
+        </Typography>
+        {code ? (
+          <Typography sx={{ fontSize: 11, color: C.muted, mt: 0.15, fontWeight: 500 }}>
+            Country code · {code}
+          </Typography>
+        ) : null}
+      </Box>
+      {selected ? (
+        <CheckRoundedIcon sx={{ fontSize: 18, color: C.secondary, flexShrink: 0 }} />
+      ) : null}
+    </Box>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   );
 }
 
@@ -509,10 +655,15 @@ function CountryAutocompleteField({
       getOptionLabel={(option) => option?.name || ""}
       isOptionEqualToValue={(option, val) => option?.name === val?.name}
       onChange={(_, next) => onChange(next?.name || "")}
+<<<<<<< HEAD
       slotProps={{
         paper: { sx: countryPaperSx },
         listbox: { sx: countryListboxSx },
       }}
+=======
+      PaperProps={{ sx: countryPaperSx }}
+      ListboxProps={{ sx: countryListboxSx }}
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
       renderOption={(props, option, { selected }) => {
         const { key, ...rest } = props;
         return (
@@ -539,11 +690,15 @@ function CountryAutocompleteField({
                     color: C.secondary,
                   }}
                 >
+<<<<<<< HEAD
                   {selectedOption ? (
                     <CountryFlag code={selectedOption.code} size={16} />
                   ) : (
                     <PublicOutlinedIcon sx={{ fontSize: 18 }} />
                   )}
+=======
+                  <PublicOutlinedIcon sx={{ fontSize: 18 }} />
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
                 </Box>
                 {params.InputProps.startAdornment}
               </>
@@ -604,6 +759,7 @@ function showApiSuccessToast(response, fallback = "Visa saved successfully.") {
   toast.success(fallback);
 }
 
+<<<<<<< HEAD
 const ADD_VISA_DRAFT_KEY = "addVisaDraft";
 
 function loadVisaDraft() {
@@ -621,13 +777,19 @@ function clearVisaDraft() {
   localStorage.removeItem(ADD_VISA_DRAFT_KEY);
 }
 
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 function normalizePricingVariants(raw) {
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((row) => ({
       visaType: normalizeVisaTypeValue(row?.processingFee || row?.visaType || ""),
       entryType: normalizeEntryTypeValue(row?.entry || row?.entryType || ""),
       durationDays: normalizeDurationDays(row?.duration || row?.durationDays || ""),
+<<<<<<< HEAD
       processingSpeed: normalizeProcessingSpeed(row?.processingTime || row?.processingSpeed || ""),
+=======
+      processingSpeed: normalizeProcessingSpeed(row?.processingTime || row?.processingSpeed || "Standard"),
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
       visaFee: row?.embassyFee != null && row.embassyFee !== ""
         ? String(row.embassyFee)
         : row?.visaFee != null
@@ -641,7 +803,10 @@ function normalizePricingVariants(raw) {
           ? String(row.commission)
           : "",
       currency: String(row?.serviceCharge || row?.currency || "BDT").trim() || "BDT",
+<<<<<<< HEAD
       visaVariantId: row?.visaVariantId ?? row?.id ?? row?._id ?? null,
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     }));
   }
   return [emptyPricingVariant()];
@@ -924,12 +1089,62 @@ function PricingVariantCard({ index, row, onChange, onRemove, canRemove }) {
               Processing speed <span style={{ color: C.danger }}>*</span>
             </Typography>
             <TextField
+<<<<<<< HEAD
               fullWidth
               placeholder="e.g. 7-10 business days"
               value={row.processingSpeed}
               onChange={(e) => onChange("processingSpeed", e.target.value)}
               sx={fieldSx}
             />
+=======
+              select
+              fullWidth
+              value={row.processingSpeed}
+              onChange={(e) => onChange("processingSpeed", e.target.value)}
+              sx={fieldSx}
+              SelectProps={{
+                renderValue: (selected) => {
+                  const option = getProcessingSpeedOption(selected);
+                  if (!option) return selected;
+                  const Icon = option.icon;
+                  return (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Icon sx={{ fontSize: 18, color: C.muted }} />
+                      <Typography sx={{ fontSize: 14, color: C.primary, fontWeight: 500 }}>
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  );
+                },
+                MenuProps: selectMenuProps,
+              }}
+            >
+              {PROCESSING_SPEED_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    sx={{
+                      py: 1.25,
+                      alignItems: "flex-start",
+                      gap: 1.25,
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 18, color: C.muted, mt: 0.25 }} />
+                    <Box>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary, lineHeight: 1.3 }}>
+                        {option.label}
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: C.muted, lineHeight: 1.3 }}>
+                        {option.subtitle}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                );
+              })}
+            </TextField>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography sx={labelSx}>Visa Fee</Typography>
@@ -1028,6 +1243,7 @@ export default function AddVisa() {
   const isEditing = Boolean(location.state?.editMode && visaFromState);
   const editingVisaId = visaFromState?.visaId ?? visaFromState?.id ?? visaFromState?._id ?? null;
 
+<<<<<<< HEAD
   const [draft] = useState(() => (isEditing ? null : loadVisaDraft()));
 
   const [activeTab, setActiveTab] = useState(0);
@@ -1116,6 +1332,20 @@ export default function AddVisa() {
     requirements,
     faqs,
   ]);
+=======
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const [departureCountry, setDepartureCountry] = useState("");
+  const [arrivalCountry, setArrivalCountry] = useState("");
+  const [description, setDescription] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
+
+  const [pricingVariants, setPricingVariants] = useState([emptyPricingVariant()]);
+  const [requirements, setRequirements] = useState([emptyRequirementGroup()]);
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 
   useEffect(() => {
     const authToken = token || localStorage.getItem("adminToken") || "";
@@ -1200,6 +1430,7 @@ export default function AddVisa() {
     setDepartureCountry(visaFromState.departureCountry || "");
     setArrivalCountry(visaFromState.arrivalCountry || "");
     setDescription(visaFromState.description || "");
+<<<<<<< HEAD
     setNotice(visaFromState.notice || "");
     setSpecialNotice(visaFromState.specialNotice || "");
     setStayPeriod(visaFromState.stayPeriod || "");
@@ -1244,6 +1475,13 @@ export default function AddVisa() {
     });
   };
 
+=======
+    setIsActive(visaFromState.isActive !== false);
+    setPricingVariants(normalizePricingVariants(visaFromState.durationCosts || visaFromState.variants));
+    setRequirements(normalizeRequirementsFromVisa(visaFromState));
+  }, [isEditing, visaFromState]);
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   const updatePricingVariant = (index, field, value) => {
     setPricingVariants((prev) =>
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
@@ -1312,6 +1550,7 @@ export default function AddVisa() {
     });
   };
 
+<<<<<<< HEAD
   const updateGeneralDocument = (index, value) => {
     setGeneralDocuments((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
@@ -1355,6 +1594,15 @@ export default function AddVisa() {
 
     const variants = pricingVariants.map((row) => {
       const item = {
+=======
+  const buildPayload = () => {
+    const payload = {
+      departureCountry: departureCountry.trim(),
+      arrivalCountry: arrivalCountry.trim(),
+      description: description.trim(),
+      isActive,
+      variants: pricingVariants.map((row) => ({
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         visaType: String(row.visaType || "").trim(),
         entryType: String(row.entryType || "").trim(),
         durationDays: String(row.durationDays || "").trim(),
@@ -1363,6 +1611,7 @@ export default function AddVisa() {
         commission: Number(row.commission) || 0,
         totalPrice: calcVariantTotal(row),
         currency: String(row.currency || "BDT").trim(),
+<<<<<<< HEAD
       };
       if (row.visaVariantId != null && row.visaVariantId !== "") {
         item.visaVariantId = Number(row.visaVariantId) || row.visaVariantId;
@@ -1400,6 +1649,21 @@ export default function AddVisa() {
   };
 
   const validateGeneral = () => {
+=======
+      })),
+      requirements: requirements
+        .map((group) => ({
+          occupation: String(group.occupation || "").trim(),
+          requirements: (group.requirements || []).map((text) => String(text || "").trim()).filter(Boolean),
+        }))
+        .filter((group) => group.occupation && group.requirements.length > 0),
+    };
+
+    return payload;
+  };
+
+  const validate = () => {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     if (!departureCountry.trim()) {
       toast.error("From country is required.");
       setActiveTab(0);
@@ -1410,10 +1674,13 @@ export default function AddVisa() {
       setActiveTab(0);
       return false;
     }
+<<<<<<< HEAD
     return true;
   };
 
   const validatePricing = () => {
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     for (let i = 0; i < pricingVariants.length; i += 1) {
       const row = pricingVariants[i];
       if (!row.visaType) {
@@ -1447,10 +1714,14 @@ export default function AddVisa() {
         return false;
       }
     }
+<<<<<<< HEAD
     return true;
   };
 
   const validateRequirements = () => {
+=======
+
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     const filledGroups = requirements
       .map((group) => ({
         occupation: String(group.occupation || "").trim(),
@@ -1477,6 +1748,7 @@ export default function AddVisa() {
         return false;
       }
     }
+<<<<<<< HEAD
     return true;
   };
 
@@ -1518,6 +1790,14 @@ export default function AddVisa() {
       goToNextTab();
       return;
     }
+=======
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
     if (!validate()) return;
 
     const authToken = token || localStorage.getItem("adminToken") || "";
@@ -1533,6 +1813,7 @@ export default function AddVisa() {
 
     setLoading(true);
     try {
+<<<<<<< HEAD
       const formData = buildFormData();
       const headers = {
         Authorization: `Bearer ${authToken}`,
@@ -1546,6 +1827,19 @@ export default function AddVisa() {
 
       if (response.status === 200 || response.status === 201) {
         if (!isEditing) clearVisaDraft();
+=======
+      const payload = buildPayload();
+      const headers = {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = isEditing
+        ? await axios.patch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_VISA(editingVisaId)}`, payload, { headers })
+        : await axios.post(`${API_BASE_URL}${API_ENDPOINTS.CREATE_VISA}`, payload, { headers });
+
+      if (response.status === 200 || response.status === 201) {
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         showApiSuccessToast(response, isEditing ? "Visa updated successfully." : "Visa created successfully.");
         navigate("/dashboard/visa/allvisa");
       }
@@ -1562,26 +1856,42 @@ export default function AddVisa() {
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography sx={labelSx}>
+<<<<<<< HEAD
             Departure Country <span style={{ color: C.danger }}>*</span>
+=======
+            From Country <span style={{ color: C.danger }}>*</span>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           </Typography>
           <CountryAutocompleteField
             value={departureCountry}
             options={countryOptions}
             loading={countriesLoading}
             onChange={setDepartureCountry}
+<<<<<<< HEAD
             placeholder="e.g. Bangladesh"
+=======
+            placeholder="Select from country"
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography sx={labelSx}>
+<<<<<<< HEAD
             Arrival Country <span style={{ color: C.danger }}>*</span>
+=======
+            To Country <span style={{ color: C.danger }}>*</span>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           </Typography>
           <CountryAutocompleteField
             value={arrivalCountry}
             options={countryOptions}
             loading={countriesLoading}
             onChange={setArrivalCountry}
+<<<<<<< HEAD
             placeholder="e.g. United States"
+=======
+            placeholder="Select to country"
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           />
         </Grid>
         <Grid item xs={12}>
@@ -1590,12 +1900,17 @@ export default function AddVisa() {
             fullWidth
             multiline
             minRows={3}
+<<<<<<< HEAD
             placeholder="Tourist visa for US travel"
+=======
+            placeholder="Enter Visa Description"
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             sx={multilineFieldSx}
           />
         </Grid>
+<<<<<<< HEAD
         <Grid item xs={12} md={6}>
           <Typography sx={labelSx}>Notice</Typography>
           <TextField
@@ -1661,16 +1976,25 @@ export default function AddVisa() {
         </Grid>
         <Grid item xs={12} md={4}>
           <Typography sx={labelSx}>Active</Typography>
+=======
+        <Grid item xs={12}>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           <Box
             sx={{
               border: `1px solid ${C.border}`,
               borderRadius: 1.5,
               px: 2,
+<<<<<<< HEAD
               py: 0.5,
               bgcolor: "#FFFFFF",
               height: INPUT_HEIGHT + 8,
               display: "flex",
               alignItems: "center",
+=======
+              py: 1,
+              bgcolor: "#FFFFFF",
+              width: "fit-content",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             }}
           >
             <FormControlLabel
@@ -1681,6 +2005,7 @@ export default function AddVisa() {
                   sx={checkboxSx}
                 />
               }
+<<<<<<< HEAD
               label={<Typography sx={{ fontSize: 14, fontWeight: 600, color: C.primary }}>isActive</Typography>}
             />
           </Box>
@@ -1757,6 +2082,12 @@ export default function AddVisa() {
             </Button>
           )}
         </Grid>
+=======
+              label={<Typography sx={{ fontSize: 14, fontWeight: 600, color: C.primary }}>Active</Typography>}
+            />
+          </Box>
+        </Grid>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
       </Grid>
     </FormSection>
   );
@@ -1797,6 +2128,7 @@ export default function AddVisa() {
   );
 
   const renderRequirementsTab = () => (
+<<<<<<< HEAD
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box
         sx={{
@@ -1866,6 +2198,16 @@ export default function AddVisa() {
           overflow: "hidden",
         }}
       >
+=======
+    <Box
+      sx={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 2,
+        bgcolor: "#F8FAFC",
+        overflow: "hidden",
+      }}
+    >
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
       <Box
         sx={{
           display: "flex",
@@ -1882,10 +2224,17 @@ export default function AddVisa() {
           <FactCheckOutlinedIcon sx={{ fontSize: 20, color: C.secondary }} />
           <Box>
             <Typography sx={{ fontSize: 14, fontWeight: 700, color: C.primary, lineHeight: 1.2 }}>
+<<<<<<< HEAD
               Occupation Requirements
             </Typography>
             <Typography sx={{ fontSize: 11.5, color: C.muted, mt: 0.25 }}>
               Occupation-wise visa documents. Each occupation may appear only once.
+=======
+              Visa Requirements
+            </Typography>
+            <Typography sx={{ fontSize: 11.5, color: C.muted, mt: 0.25 }}>
+              Group documents by occupation
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             </Typography>
           </Box>
         </Box>
@@ -2046,6 +2395,7 @@ export default function AddVisa() {
           Add Occupation
         </Button>
       </Box>
+<<<<<<< HEAD
       </Box>
     </Box>
   );
@@ -2149,6 +2499,12 @@ export default function AddVisa() {
   );
 
   const tabPanels = [renderGeneralTab, renderPricingTab, renderRequirementsTab, renderFaqsTab];
+=======
+    </Box>
+  );
+
+  const tabPanels = [renderGeneralTab, renderPricingTab, renderRequirementsTab];
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 
   return (
     <Box
@@ -2162,7 +2518,11 @@ export default function AddVisa() {
       <Box sx={{ maxWidth: 960, mx: "auto" }}>
         <AdminPageTitleBar
           title={isEditing ? "Edit Visa" : "Add Visa"}
+<<<<<<< HEAD
           subtitle="POST /visa/createVisa — multipart form with variants, documents & requirements"
+=======
+          subtitle="Configure visa route, pricing, and requirements"
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           action={
             <IconButton
               onClick={() => navigate("/dashboard/visa/allvisa")}
@@ -2261,10 +2621,14 @@ export default function AddVisa() {
               type="button"
               variant="outlined"
               disabled={loading}
+<<<<<<< HEAD
               onClick={() => {
                 if (!isEditing) clearVisaDraft();
                 navigate("/dashboard/visa/allvisa");
               }}
+=======
+              onClick={() => navigate("/dashboard/visa/allvisa")}
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               sx={{
                 textTransform: "none",
                 fontWeight: 600,
@@ -2277,6 +2641,7 @@ export default function AddVisa() {
             >
               Cancel
             </Button>
+<<<<<<< HEAD
             {activeTab > 0 ? (
               <Button
                 type="button"
@@ -2339,6 +2704,26 @@ export default function AddVisa() {
                 Next
               </Button>
             )}
+=======
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              startIcon={loading ? null : <SaveOutlinedIcon />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                borderRadius: 1.5,
+                px: 3,
+                py: 1,
+                bgcolor: C.secondary,
+                boxShadow: "0 4px 14px rgba(2, 77, 175, 0.3)",
+                "&:hover": { bgcolor: "#0A2B76" },
+              }}
+            >
+              {loading ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : "Submit"}
+            </Button>
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
           </Box>
         </Box>
       </Box>

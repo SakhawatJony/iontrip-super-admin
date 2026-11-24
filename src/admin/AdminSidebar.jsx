@@ -554,13 +554,20 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           {menuItem(<CardTravelIcon sx={{ fontSize: 22 }} />, "Visa", {
             dropdown: true,
             isOpen: expandedMenu === "visa",
+<<<<<<< HEAD
             onClick: () => handleMainMenuClick("visa", "/dashboard/visa/bookinghistory"),
+=======
+            onClick: () => handleMainMenuClick("visa", "/dashboard/visa/allvisa"),
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             onToggleClick: () => handleToggle("visa"),
             activePaths: ["/dashboard/visa"],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "visa"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
+<<<<<<< HEAD
               <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/visa/bookinghistory" />
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               <SubMenuItem collapsed={collapsed} text="Visa History" path="/dashboard/visa/allvisa" />
               <SubMenuItem collapsed={collapsed} text="Add Visa" path="/dashboard/visa/addvisa" />
               <SubMenuItem collapsed={collapsed} text="Visa Setting" path="/dashboard/visa/setting" />
@@ -570,16 +577,25 @@ const AdminSidebar = ({ collapsed = false, onToggleCollapsed } = {}) => {
           {menuItem(<CardTravelIcon sx={{ fontSize: 22 }} />, "Tour", {
             dropdown: true,
             isOpen: expandedMenu === "tour",
+<<<<<<< HEAD
             onClick: () => handleMainMenuClick("tour", "/dashboard/tour/bookinghistory"),
+=======
+            onClick: () => handleMainMenuClick("tour", "/dashboard/tour/alltour"),
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             onToggleClick: () => handleToggle("tour"),
             activePaths: ["/dashboard/tour"],
           }, location, collapsed)}
           <Collapse in={expandedMenu === "tour"} timeout="auto" unmountOnExit>
             <Box sx={submenuRailSx}>
+<<<<<<< HEAD
               <SubMenuItem collapsed={collapsed} text="Booking History" path="/dashboard/tour/bookinghistory" />
               <SubMenuItem collapsed={collapsed} text="All Tour" path="/dashboard/tour/alltour" />
               <SubMenuItem collapsed={collapsed} text="Add Tour" path="/dashboard/tour/addtour" />
               <SubMenuItem collapsed={collapsed} text="Tour Setting" path="/dashboard/tour/setting" />
+=======
+              <SubMenuItem collapsed={collapsed} text="Tour History" path="/dashboard/tour/alltour" />
+              <SubMenuItem collapsed={collapsed} text="Add Tour" path="/dashboard/tour/addtour" />
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             </Box>
           </Collapse>
 

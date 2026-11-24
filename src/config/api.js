@@ -9,6 +9,7 @@ function normalizeApiBase(url) {
 export const API_BASE_URL =
   normalizeApiBase(import.meta.env.VITE_API_BASE_URL) || DEFAULT_API_BASE;
 
+<<<<<<< HEAD
 function envText(name, fallback) {
   const value = import.meta.env[name];
   if (typeof value === "string" && value.trim()) return value.trim();
@@ -27,6 +28,8 @@ export const TOUR_API_BASE_URL =
   normalizeApiBase(import.meta.env.VITE_PUBLIC_API_BASE_URL) ||
   "https://api.iontrip.com";
 
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 // API Endpoints
 export const API_ENDPOINTS = {
   ADMIN_LOGIN: "/auth/signAdmin",
@@ -48,6 +51,7 @@ export const API_ENDPOINTS = {
   VENDOR_TICKET: "/ticket-actions/VendorTicket",
   CREATE_VISA: "/visa/createVisa",
   FIND_ALL_VISA: "/visa/findAllVisa",
+<<<<<<< HEAD
   VISA_BOOKINGS_ADMIN: "/visa/bookings/admin",
   VISA_BOOKING_ADMIN_BY_ID: (id) => `/visa/bookings/admin/${id}`,
   COUNTRIES: "/country",
@@ -69,6 +73,10 @@ export const API_ENDPOINTS = {
   ),
   TOUR_PACKAGE_ENQUIRY_BY_ID: (id) =>
     `${envPath("VITE_TOUR_PACKAGE_ENQUIRIES_PATH", "/admin/tour-package-enquiries")}/${encodeURIComponent(id)}`,
+=======
+  COUNTRIES: "/country",
+  COUNTRY_BY_ID: (id) => `/country/${id}`,
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   AIRLINE_MARKUP: "/airline-markup",
   AIRLINE_MARKUP_BY_ID: (id) => `/airline-markup/${id}`,
   UPDATE_VISA: (id) => `/visa/updateVisa/${id}`,

@@ -838,8 +838,13 @@ export default function Dashboard() {
         { title: "Reports", subtitle: "Ledger Reports", path: "/dashboard/ledgerreport", key: "finance" },
         { title: "Deposits", subtitle: "Credit & Wallet", path: "/dashboard/alldeposit", key: "finance" },
         { title: "Hotels", subtitle: "Hotel Bookings", path: "/dashboard/hotel/bookinghistory", key: "stays" },
+<<<<<<< HEAD
         { title: "Visa", subtitle: "Visa Applications", path: "/dashboard/visa/bookinghistory", key: "tours" },
         { title: "Tours", subtitle: "Tour Packages", path: "/dashboard/tour/bookinghistory", key: "tours" },
+=======
+        { title: "Visa", subtitle: "Visa Applications", path: "/dashboard/visa/allvisa", key: "tours" },
+        { title: "Tours", subtitle: "Tour Packages", path: "/dashboard/tour/alltour", key: "tours" },
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
         { title: "Settings", subtitle: "System Config", path: "/dashboard/settings/alladmin", key: "settings" },
       ]
   ).map((item) => ({

@@ -17,7 +17,11 @@ const QUICK_ACTION_ROUTES = {
   users: "/dashboard/customer/allagent",
   flights: "/dashboard/flightbookings/bookinghistory",
   stays: "/dashboard/hotel/bookinghistory",
+<<<<<<< HEAD
   tours: "/dashboard/tour/bookinghistory",
+=======
+  tours: "/dashboard/tour/alltour",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   cars: "/dashboard/flightbookings/bookinghistory",
   pages: "/dashboard/manage/website",
   blogs: "/dashboard/manage/allblog",

@@ -15,8 +15,12 @@ const MODULE_HISTORY = {
   deposit: "/dashboard/alldeposit",
   hotel: "/dashboard/hotel/bookinghistory",
   stay: "/dashboard/hotel/bookinghistory",
+<<<<<<< HEAD
   visa: "/dashboard/visa/bookinghistory",
   tour: "/dashboard/tour/bookinghistory",
+=======
+  visa: "/dashboard/visa/allvisa",
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   agent: "/dashboard/customer/allagent",
   blog: "/dashboard/manage/allblog",
   transaction: "/dashboard/ledgerreport",
@@ -189,11 +193,15 @@ export function resolveNotificationDestination(notification, { userEmail = "" } 
   }
 
   if (combined.includes("visa")) {
+<<<<<<< HEAD
     return { path: "/dashboard/visa/bookinghistory", state: undefined };
   }
 
   if (combined.includes("tour")) {
     return { path: "/dashboard/tour/bookinghistory", state: undefined };
+=======
+    return { path: "/dashboard/visa/allvisa", state: undefined };
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
   }
 
   if (combined.includes("agent")) {

@@ -3,7 +3,10 @@
 import React from "react";
 import Box from "@mui/material/Box";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+<<<<<<< HEAD
 import { API_ENDPOINTS, TOUR_API_BASE_URL } from "./config/api.js";
+=======
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 import Navbar from "./shared/Navbar.jsx";
 import Footer from "./shared/Footer.jsx";
 import AdminLogin from "./admin/AdminLogin.jsx";
@@ -30,6 +33,7 @@ import VisaLayout from "./admin/VisaLayout.jsx";
 import AllVisa from "./admin/AllVisa.jsx";
 import AddVisa from "./admin/AddVisa.jsx";
 import VisaSetting from "./admin/VisaSetting.jsx";
+<<<<<<< HEAD
 import VisaBookingHistory from "./admin/VisaBookingHistory.jsx";
 import VisaBookingDetails from "./admin/VisaBookingDetails.jsx";
 import TourLayout from "./admin/TourLayout.jsx";
@@ -38,6 +42,11 @@ import AddTour from "./admin/AddTour.jsx";
 import TourBookingHistory from "./admin/TourBookingHistory.jsx";
 import TourEnquiryDetails from "./admin/TourEnquiryDetails.jsx";
 import TourPackageDetails from "./admin/TourPackageDetails.jsx";
+=======
+import TourLayout from "./admin/TourLayout.jsx";
+import AllTour from "./admin/AllTour.jsx";
+import AddTour from "./admin/AddTour.jsx";
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
 import FlightLayout from "./admin/FlightLayout.jsx";
 import FlightInfo from "./admin/FlightInfo.jsx";
 import ReschedulePax from "./admin/ReschedulePax.jsx";
@@ -122,16 +131,21 @@ export default function App() {
             <Route path="maketicketed" element={<MakeTicketed />} />
 
             <Route path="visa" element={<VisaLayout />}>
+<<<<<<< HEAD
               <Route index element={<Navigate to="bookinghistory" replace />} />
               <Route path="bookinghistory" element={<VisaBookingHistory />} />
               <Route path="bookingdetails" element={<VisaBookingDetails />} />
               <Route path="bookingdetails/:bookingId" element={<VisaBookingDetails />} />
+=======
+              <Route index element={<Navigate to="allvisa" replace />} />
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
               <Route path="allvisa" element={<AllVisa />} />
               <Route path="addvisa" element={<AddVisa />} />
               <Route path="setting" element={<VisaSetting />} />
             </Route>
 
             <Route path="tour" element={<TourLayout />}>
+<<<<<<< HEAD
               <Route index element={<Navigate to="bookinghistory" replace />} />
               <Route path="bookinghistory" element={<TourBookingHistory />} />
               <Route path="enquirydetails/:enquiryId" element={<TourEnquiryDetails />} />
@@ -151,6 +165,11 @@ export default function App() {
                   />
                 }
               />
+=======
+              <Route index element={<Navigate to="alltour" replace />} />
+              <Route path="alltour" element={<AllTour />} />
+              <Route path="addtour" element={<AddTour />} />
+>>>>>>> 9ff513b6a1f57c88d07f4f157072a0e15ff4fcf5
             </Route>
           </Route>
         </Routes>
